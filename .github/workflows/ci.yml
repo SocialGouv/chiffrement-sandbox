@@ -38,8 +38,8 @@ jobs:
       - name: Installing
         run: yarn --frozen-lockfile --perfer-offline --link-duplicates
 
-      # - name: Lint
-      #   run: yarn lint
+      - name: Lint
+        run: yarn lint
 
       - name: Unit tests
         run: yarn test --coverage --coverageReporters=lcov --coverageReporters=text-summary
@@ -48,8 +48,8 @@ jobs:
       #   continue-on-error: true
       #   uses: codecov/codecov-action@v2
 
-      # - name: Build
-      #   run: yarn build
+      - name: Build
+        run: yarn build
 
       # - name: Functional tests
       #   run: yarn e2e

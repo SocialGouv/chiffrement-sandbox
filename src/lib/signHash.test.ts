@@ -1,11 +1,7 @@
 import { signHash, verifySignedHash } from './signHash'
-import { initializeSodium, Sodium } from './sodium'
+import { ready, sodium } from './sodium'
 
-let sodium: Sodium
-
-beforeAll(async () => {
-  sodium = await initializeSodium()
-})
+beforeAll(() => ready)
 
 describe('signHash', () => {
   test('known vectors', async () => {

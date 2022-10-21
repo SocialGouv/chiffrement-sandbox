@@ -1,5 +1,4 @@
-import { Blob } from 'node:buffer'
-import { Sodium } from './sodium.js'
+import { Sodium } from './sodium'
 
 export const DEFAULT_FILE_CHUNK_SIZE = 4096
 

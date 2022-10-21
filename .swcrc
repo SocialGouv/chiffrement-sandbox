@@ -1,0 +1,20 @@
+{
+  "jsc": {
+    "baseUrl": "./src",
+    "paths": {
+      "components/*": ["./components/*"],
+      "lib/*": ["./lib/*"],
+      "pages/*": ["./pages/*"],
+      "workers/*": ["./workers/*"]
+    },
+    "target": "es2020",
+    "parser": {
+      "syntax": "typescript",
+      "tsx": true
+    }
+  },
+  "module": {
+    "type": "commonjs"
+  },
+  "sourceMaps": "inline"
+}

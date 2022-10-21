@@ -1,10 +1,12 @@
-import { initializeSodium } from './sodium'
+import { ready, sodium } from './sodium'
 import {
   checkEncryptionPublicKey,
   checkSignaturePublicKey,
   concat,
   split,
 } from './utils'
+
+beforeAll(() => ready)
 
 describe('utils', () => {
   test('concat', () => {
@@ -23,7 +25,6 @@ describe('utils', () => {
   })
 
   test('checkSignaturePublicKey', async () => {
-    const sodium = await initializeSodium()
     const alice = sodium.crypto_sign_keypair()
     const eve = sodium.crypto_sign_keypair()
     expect(
@@ -35,7 +36,6 @@ describe('utils', () => {
   })
 
   test('checkEncryptionPublicKey', async () => {
-    const sodium = await initializeSodium()
     const alice = sodium.crypto_box_keypair()
     const eve = sodium.crypto_box_keypair()
     expect(

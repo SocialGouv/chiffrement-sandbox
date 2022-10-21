@@ -7,14 +7,10 @@ import {
   SealedBoxCipher,
   SecretBoxCipher,
 } from './encryption'
-import { initializeSodium, Sodium } from './sodium'
+import { ready, sodium } from './sodium'
 import { concat } from './utils'
 
-let sodium: Sodium
-
-beforeAll(async () => {
-  sodium = await initializeSodium()
-})
+beforeAll(() => ready)
 
 const BUFFER_SIZES = [32, 128, 1234, 1 << 16]
 
@@ -38,7 +34,7 @@ const NUMBER_INPUTS = [
   1,
   1234567890,
   1 << 24,
-  1 << (32 - 1),
+  (1 << 32) - 1,
   -1 << 22,
   Math.PI,
   Math.sqrt(2),
