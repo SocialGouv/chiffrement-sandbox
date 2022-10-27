@@ -1,6 +1,5 @@
 node_modules/
-dist/
-.parcel-cache/
+build/
 coverage/
 .next/
 *.env
