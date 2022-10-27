@@ -1,4 +1,4 @@
-import { ready, sodium } from './sodium'
+import { ready, sodium } from './sodium.js'
 import {
   checkEncryptionPublicKey,
   checkSignaturePublicKey,

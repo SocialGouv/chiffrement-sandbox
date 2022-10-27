@@ -1,7 +1,7 @@
 import { Badge, BadgeProps, Box, useBoolean } from '@chakra-ui/react'
 import React from 'react'
 import { FiCheckCircle, FiLoader } from 'react-icons/fi'
-import { ready } from '../lib/sodium'
+import { ready } from '../../modules/crypto/sodium'
 
 export const SodiumState: React.FC<BadgeProps> = props => {
   const [isReady, { on: setReady }] = useBoolean(false)

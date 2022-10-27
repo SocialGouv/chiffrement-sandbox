@@ -1,13 +1,6 @@
 {
   "jsc": {
     "baseUrl": "./src",
-    "paths": {
-      "modules/*": ["./modules/*"],
-      "server/*": ["./server/*"],
-      "client/*": ["./client/*"],
-      "pages/*": ["./pages/*"],
-      "tests/*": ["./tests/*"]
-    },
     "target": "es2020",
     "parser": {
       "syntax": "typescript",

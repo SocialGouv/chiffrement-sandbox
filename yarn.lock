@@ -1752,7 +1752,7 @@
   integrity sha512-TEmYvjjeX9ggLkyxmuSm6txaWPW5FY/mkn61/o4qekN3v27oIp3rQ8mnHvhg8qMVpOl5RXuX7XWIGACkHloPfw==
   dependencies:
     "@sentry/types" "7.17.0"
-    "@sentry/utils" "7.16.0"
+    "@sentry/utils" "7.17.0"
     tslib "^1.9.3"
 
 "@sentry/node@^7.16.0":
@@ -1762,28 +1762,23 @@
   dependencies:
     "@sentry/core" "7.17.0"
     "@sentry/types" "7.17.0"
-    "@sentry/utils" "7.16.0"
+    "@sentry/utils" "7.17.0"
     cookie "^0.4.1"
     https-proxy-agent "^5.0.0"
     lru_map "^0.3.3"
     tslib "^1.9.3"
-
-"@sentry/types@7.16.0":
-  version "7.16.0"
-  resolved "https://registry.yarnpkg.com/@sentry/types/-/types-7.16.0.tgz#79c06ada153a84feb949fa49b1c9d15f91decd79"
-  integrity sha512-i6D+OK6d0l/k+VQvRp/Pt21WkDEgVBUIZq+sOkEZJczbcfexVdXKeXXoYTD2vYuFq8Yy28fzlsZaKI+NoH94yQ==
 
 "@sentry/types@7.17.0":
   version "7.17.0"
   resolved "https://registry.yarnpkg.com/@sentry/types/-/types-7.17.0.tgz#a6959f0eb6dc48ec2e28f566f6a66cc98c8b152a"
   integrity sha512-iN6BPRwZRt6jfJf9F1pVPlUUjnTn5PXHilssGSzTYrBQBtE9eoi4WCYAdnCP9qpa7TGBBDiWyDBN3ZkbtGFsvQ==
 
-"@sentry/utils@7.16.0":
-  version "7.16.0"
-  resolved "https://registry.yarnpkg.com/@sentry/utils/-/utils-7.16.0.tgz#b832520c661d4435808969ee04814ff8e20497b1"
-  integrity sha512-3Zh1txg7IRp4kZAdG27YF7K6lD1IZyuAo9KjoPg1Xzqa4DOZyASJuEkbf+rK2a9T4HrtVHHXJUsNbKg8WM3VHg==
+"@sentry/utils@7.17.0":
+  version "7.17.0"
+  resolved "https://registry.yarnpkg.com/@sentry/utils/-/utils-7.17.0.tgz#6d09b8f75a235dcc6486e9fa0fcc86c89be6a699"
+  integrity sha512-rsBemXHTabP9YL63jdlE23OhvPs2ElHKCBqWTC003oHSkhTjl3Png3Sca4DaMeWFdotSltXVjp5Cp9dbcglfzw==
   dependencies:
-    "@sentry/types" "7.16.0"
+    "@sentry/types" "7.17.0"
     tslib "^1.9.3"
 
 "@sinclair/typebox@^0.24.1":
@@ -6555,6 +6550,11 @@ yocto-queue@^0.1.0:
   version "0.1.0"
   resolved "https://registry.yarnpkg.com/yocto-queue/-/yocto-queue-0.1.0.tgz#0294eb3dee05028d31ee1a5fa2c556a6aaf10a1b"
   integrity sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==
+
+zod-to-json-schema@^3.18.1:
+  version "3.18.1"
+  resolved "https://registry.yarnpkg.com/zod-to-json-schema/-/zod-to-json-schema-3.18.1.tgz#ba6aa9ca4a53c0ed18ad6c0d4f85b957d9500c11"
+  integrity sha512-YFP4dAZR2GHDkTOZL7E7p2E3/yoUZeB5RD797JEpJTyh/L+9WvIK/tEMuF+MhzDPhQWXlkSugxmO8nbdXjJKYA==
 
 zod@^3.19.1:
   version "3.19.1"

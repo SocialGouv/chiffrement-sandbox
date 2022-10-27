@@ -8,7 +8,7 @@ import type {
   HookHandlerDoneFunction,
 } from 'fastify'
 import fp from 'fastify-plugin'
-import type { App } from 'server/types'
+import type { App } from '../types'
 
 declare module 'http' {
   interface IncomingMessage {

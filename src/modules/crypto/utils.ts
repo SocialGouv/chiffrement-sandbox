@@ -1,5 +1,5 @@
 import type { StringOutputFormat } from 'libsodium-wrappers'
-import type { Sodium } from './sodium'
+import type { Sodium } from './sodium.js'
 
 export function concat(...items: Uint8Array[]) {
   const buffer = new Uint8Array(

@@ -7,9 +7,6 @@ export async function main() {
   dotenv.config()
   const appServer = createServer()
   await startServer(appServer)
-  appServer.log.info(
-    `Server signature public key: ${process.env.SIGNATURE_PUBLIC_KEY}`
-  )
 }
 
 // --

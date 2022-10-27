@@ -11,7 +11,7 @@ export function createServer() {
   const __PROD__ = process.env.NODE_ENV === 'production'
   checkEnv({
     required: [
-      'APP_URL',
+      'DEPLOYMENT_URL',
       'SIGNATURE_PUBLIC_KEY',
       'SIGNATURE_PRIVATE_KEY',
       'NEXT_PUBLIC_RELEASE_TAG',
@@ -130,8 +130,8 @@ export function createServer() {
     },
   })
 
-  if (process.env.DEBUG) {
-    app.ready(() => {
+  app.ready(() => {
+    if (process.env.DEBUG) {
       app.log.info(
         'Plugins loaded:\n' +
           app
@@ -153,8 +153,16 @@ export function createServer() {
         'Routes loaded:\n' +
           app.printRoutes({ commonPrefix: false, includeHooks: true })
       )
-    })
-  }
+    }
+    app.log.info(
+      {
+        release: process.env.RELEASE_TAG,
+        deploymentURL: process.env.DEPLOYMENT_URL,
+        signaturePublicKey: process.env.SIGNATURE_PUBLIC_KEY,
+      },
+      'Server info'
+    )
+  })
 
   return app
 }

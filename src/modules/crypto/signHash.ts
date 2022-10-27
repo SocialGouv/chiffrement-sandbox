@@ -1,5 +1,5 @@
-import { hashItems } from './hash'
-import type { Sodium } from './sodium'
+import { hashItems } from './hash.js'
+import type { Sodium } from './sodium.js'
 
 export function generateSignatureKeyPair(sodium: Sodium) {
   return sodium.crypto_sign_keypair()

@@ -2,8 +2,8 @@ import type {
   StringOutputFormat,
   Uint8ArrayOutputFormat,
 } from 'libsodium-wrappers'
-import type { Cipher } from './ciphers'
-import type { Sodium } from './sodium'
+import type { Cipher } from './ciphers.js'
+import type { Sodium } from './sodium.js'
 import {
   concat,
   decode,
@@ -11,7 +11,7 @@ import {
   isEncryptable,
   isUint8Array,
   split,
-} from './utils'
+} from './utils.js'
 
 // --
 

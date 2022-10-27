@@ -2,10 +2,10 @@ import {
   generateBoxCipher,
   generateSealedBoxCipher,
   generateSecretBoxCipher,
-} from './ciphers'
-import { decrypt, encodedCiphertextFormatV1, encrypt } from './encryption'
-import { ready, sodium } from './sodium'
-import { concat } from './utils'
+} from './ciphers.js'
+import { decrypt, encodedCiphertextFormatV1, encrypt } from './encryption.js'
+import { ready, sodium } from './sodium.js'
+import { concat } from './utils.js'
 
 beforeAll(() => ready)
 

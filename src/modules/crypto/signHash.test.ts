@@ -1,5 +1,5 @@
-import { signHash, verifySignedHash } from './signHash'
-import { ready, sodium } from './sodium'
+import { signHash, verifySignedHash } from './signHash.js'
+import { ready, sodium } from './sodium.js'
 
 beforeAll(() => ready)
 

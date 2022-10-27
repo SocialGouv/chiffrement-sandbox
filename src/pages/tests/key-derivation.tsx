@@ -22,13 +22,13 @@ import {
   Stack,
   Text,
 } from '@chakra-ui/react'
-import { sodium } from 'client/lib/sodium'
 import type { NextPage } from 'next'
 import { queryTypes, useQueryState } from 'next-usequerystate'
 import prettyBytes from 'pretty-bytes'
 import prettyMs from 'pretty-ms'
 import React from 'react'
 import { FiRefreshCw } from 'react-icons/fi'
+import { sodium } from '../../modules/crypto/sodium'
 
 type State = {
   isRunning: boolean

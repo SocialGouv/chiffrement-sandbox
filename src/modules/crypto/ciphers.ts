@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { sodium, Sodium } from './sodium'
+import { sodium, Sodium } from './sodium.js'
 
 export type BoxCipher<DataType = Uint8Array> = {
   algorithm: 'box'

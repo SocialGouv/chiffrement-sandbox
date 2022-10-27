@@ -1,3 +1,4 @@
+import type { SignupRequestBody } from '../api/signup.js'
 import {
   BoxCipher,
   Cipher,
@@ -5,19 +6,19 @@ import {
   generateBoxCipher,
   SealedBoxCipher,
   SecretBoxCipher,
-} from './ciphers'
-import { decrypt, encodedCiphertextFormatV1, encrypt } from './encryption'
+} from './ciphers.js'
+import { decrypt, encodedCiphertextFormatV1, encrypt } from './encryption.js'
 import {
   generateSignatureKeyPair,
   signHash,
   verifySignedHash,
-} from './signHash'
-import type { Sodium } from './sodium'
-import { checkEncryptionPublicKey, checkSignaturePublicKey } from './utils'
+} from './signHash.js'
+import type { Sodium } from './sodium.js'
+import { checkEncryptionPublicKey, checkSignaturePublicKey } from './utils.js'
 
 export type ClientConfig<KeyType = string> = {
   serverURL: string
-  serverPublicKey: KeyType
+  serverPublicKey: KeyType // todo: Make this an array to allow server key rotation
   pollingInterval?: number
   onKeyReceived?: (key: KeychainItem) => unknown
 }
@@ -62,7 +63,7 @@ type Identity = {
 type PartialIdentity = Pick<Identity, 'userID'> &
   Partial<Omit<Identity, 'userID'>>
 
-type PublicUserIdentity<KeyType = Key> = {
+export type PublicUserIdentity<KeyType = Key> = {
   userID: string
   signaturePublicKey: KeyType
   sharingPublicKey: KeyType
@@ -144,8 +145,7 @@ export class Client {
       algorithm: 'secretBox',
       key: personalKey,
     }
-    // todo: Provide a type for signup body
-    const body = {
+    const body: SignupRequestBody = {
       userID,
       signaturePublicKey: this.encode(identity.signature.publicKey),
       sharingPublicKey: this.encode(identity.sharing.publicKey),

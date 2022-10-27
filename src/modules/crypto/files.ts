@@ -1,4 +1,4 @@
-import { Sodium } from './sodium'
+import { Sodium } from './sodium.js'
 
 export const DEFAULT_FILE_CHUNK_SIZE = 4096
 

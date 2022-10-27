@@ -1,4 +1,4 @@
-import type { Sodium } from './sodium'
+import type { Sodium } from './sodium.js'
 
 export function hashItems(sodium: Sodium, ...items: Uint8Array[]) {
   const hashState = sodium.crypto_generichash_init(
