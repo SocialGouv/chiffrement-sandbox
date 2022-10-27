@@ -2,6 +2,7 @@ import type {
   StringOutputFormat,
   Uint8ArrayOutputFormat,
 } from 'libsodium-wrappers'
+import type { Cipher } from './ciphers'
 import type { Sodium } from './sodium'
 import {
   concat,
@@ -12,25 +13,6 @@ import {
   split,
 } from './utils'
 
-export type BoxCipher = {
-  algorithm: 'box'
-  publicKey: Uint8Array
-  privateKey: Uint8Array
-  nonce?: Uint8Array
-}
-
-export type SealedBoxCipher = {
-  algorithm: 'sealedBox'
-  publicKey: Uint8Array
-  privateKey?: Uint8Array
-}
-
-export type SecretBoxCipher = {
-  algorithm: 'secretBox'
-  key: Uint8Array
-  nonce?: Uint8Array
-}
-
 // --
 
 export enum PayloadType {
@@ -39,25 +21,9 @@ export enum PayloadType {
   json = 'json', // number | boolean
 }
 
-export type Cipher = BoxCipher | SealedBoxCipher | SecretBoxCipher
-
-const encodedCiphertextFormats = ['application/chiffre.ciphertext.v1'] as const
-
-export type EncodedCiphertextFormat = typeof encodedCiphertextFormats[number]
-
+export const encodedCiphertextFormatV1 = 'application/e2esdk.ciphertext.v1'
+export type EncodedCiphertextFormat = typeof encodedCiphertextFormatV1
 export type EncryptableJSONDataType = string | number | boolean
-
-// --
-
-export function generateEncryptionKey(sodium: Sodium) {
-  return sodium.randombytes_buf(sodium.crypto_secretbox_KEYBYTES)
-}
-
-export function generateEncryptionKeyPair(sodium: Sodium) {
-  return sodium.crypto_box_keypair()
-}
-
-// --
 
 /**
  * Encrypt input data into a string representation
@@ -97,7 +63,7 @@ export function encrypt<DataType extends Uint8Array | EncryptableJSONDataType>(
   outputFormat:
     | Uint8ArrayOutputFormat
     | StringOutputFormat
-    | EncodedCiphertextFormat = 'application/chiffre.ciphertext.v1'
+    | EncodedCiphertextFormat = encodedCiphertextFormatV1
 ) {
   const { payloadType, payload } = isUint8Array(input)
     ? {
@@ -123,7 +89,7 @@ export function encrypt<DataType extends Uint8Array | EncryptableJSONDataType>(
       cipher.publicKey,
       cipher.privateKey
     )
-    if (outputFormat === 'application/chiffre.ciphertext.v1') {
+    if (outputFormat === encodedCiphertextFormatV1) {
       return [
         'v1',
         cipher.algorithm,
@@ -140,7 +106,7 @@ export function encrypt<DataType extends Uint8Array | EncryptableJSONDataType>(
 
   if (cipher.algorithm === 'sealedBox') {
     const ciphertext = sodium.crypto_box_seal(payload, cipher.publicKey)
-    if (outputFormat === 'application/chiffre.ciphertext.v1') {
+    if (outputFormat === encodedCiphertextFormatV1) {
       // prettier-ignore
       return [
         'v1',
@@ -159,7 +125,7 @@ export function encrypt<DataType extends Uint8Array | EncryptableJSONDataType>(
     const nonce =
       cipher.nonce ?? sodium.randombytes_buf(sodium.crypto_secretbox_NONCEBYTES)
     const ciphertext = sodium.crypto_secretbox_easy(payload, nonce, cipher.key)
-    if (outputFormat === 'application/chiffre.ciphertext.v1') {
+    if (outputFormat === encodedCiphertextFormatV1) {
       return [
         'v1',
         cipher.algorithm,
@@ -211,7 +177,7 @@ export function decrypt<Output = any>(
 
   const payload = isUint8Array(input)
     ? input
-    : inputEncoding === 'application/chiffre.ciphertext.v1'
+    : inputEncoding === encodedCiphertextFormatV1
     ? input.split('.')
     : decode(sodium, input, inputEncoding!)
 
@@ -306,10 +272,7 @@ export function encryptObject<Object extends object>(
         return [key, value]
       }
       try {
-        return [
-          key,
-          encrypt(sodium, value, cipher, 'application/chiffre.ciphertext.v1'),
-        ]
+        return [key, encrypt(sodium, value, cipher, encodedCiphertextFormatV1)]
       } catch {
         return [key, value]
       }

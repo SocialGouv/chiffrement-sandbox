@@ -27,12 +27,12 @@
     "moduleResolution": "node" /* Specify how TypeScript looks up a file from a given module specifier. */,
     "baseUrl": "./src" /* Specify the base directory to resolve non-relative module names. */,
     "paths": {
-      /* Specify a set of entries that re-map imports to additional lookup locations. */
       // Note: all paths are relative to baseUrl
-      "components/*": ["./components/*"],
-      "lib/*": ["./lib/*"],
+      "modules/*": ["./modules/*"],
+      "server/*": ["./server/*"],
+      "client/*": ["./client/*"],
       "pages/*": ["./pages/*"],
-      "workers/*": ["./workers/*"]
+      "tests/*": ["./tests/*"]
     },
     // "rootDirs": [],                                   /* Allow multiple folders to be treated as one when resolving modules. */
     // "typeRoots": [],                                  /* Specify multiple folders that act like './node_modules/@types'. */
@@ -109,9 +109,12 @@
   "ts-node": {
     // It is faster to skip typechecking.
     // Remove if you want ts-node to do typechecking.
+    "require": ["tsconfig-paths/register"],
     "transpileOnly": true,
     "files": true,
-    "esm": true
+    "esm": true,
+    "logError": true, // Not logging silently skips fastify-autoload errors
+    "transpiler": "ts-node/transpilers/swc-experimental"
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
   "exclude": ["node_modules"]

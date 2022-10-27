@@ -22,7 +22,7 @@ import {
   Stack,
   Text,
 } from '@chakra-ui/react'
-import { sodium } from 'lib/sodium'
+import { sodium } from 'client/lib/sodium'
 import type { NextPage } from 'next'
 import { queryTypes, useQueryState } from 'next-usequerystate'
 import prettyBytes from 'pretty-bytes'
@@ -97,7 +97,7 @@ const KeyDerivationTestPage: NextPage = () => {
   const onClick = React.useCallback(async () => {
     dispatch({ type: 'process' })
     const tick = performance.now()
-    const { worker } = await import('workers/keyDerivation.controller')
+    const { worker } = await import('client/workers/keyDerivation.controller')
     const key = await worker(
       keySize,
       input,

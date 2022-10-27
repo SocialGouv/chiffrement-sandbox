@@ -3,7 +3,7 @@
  */
 const nextConfig = {
   reactStrictMode: true,
-  basePath: '/chiffrement-sandbox',
+  // basePath: '/chiffrement-sandbox',
   images: {
     unoptimized: true,
   },

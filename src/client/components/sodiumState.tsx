@@ -3,7 +3,7 @@ import React from 'react'
 import { FiCheckCircle, FiLoader } from 'react-icons/fi'
 import { ready } from '../lib/sodium'
 
-export const SodiumState: React.FC<BadgeProps> = (props) => {
+export const SodiumState: React.FC<BadgeProps> = props => {
   const [isReady, { on: setReady }] = useBoolean(false)
   React.useEffect(() => {
     ready.then(setReady)

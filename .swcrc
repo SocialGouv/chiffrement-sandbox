@@ -2,10 +2,11 @@
   "jsc": {
     "baseUrl": "./src",
     "paths": {
-      "components/*": ["./components/*"],
-      "lib/*": ["./lib/*"],
+      "modules/*": ["./modules/*"],
+      "server/*": ["./server/*"],
+      "client/*": ["./client/*"],
       "pages/*": ["./pages/*"],
-      "workers/*": ["./workers/*"]
+      "tests/*": ["./tests/*"]
     },
     "target": "es2020",
     "parser": {
@@ -14,7 +15,7 @@
     }
   },
   "module": {
-    "type": "commonjs"
+    "type": "es6"
   },
   "sourceMaps": "inline"
 }

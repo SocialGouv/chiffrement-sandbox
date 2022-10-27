@@ -3,3 +3,5 @@ dist/
 .parcel-cache/
 coverage/
 .next/
+*.env
+.volumes/

@@ -1,6 +1,6 @@
 import { Container, Flex, FlexProps, Icon, Text } from '@chakra-ui/react'
-import { ColorModeSwitch } from 'components/colorModeSwitch'
-import { SodiumState } from 'components/sodiumState'
+import { ColorModeSwitch } from 'client/components/colorModeSwitch'
+import { SodiumState } from 'client/components/sodiumState'
 import React from 'react'
 import { TbSalt } from 'react-icons/tb'
 

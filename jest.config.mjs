@@ -1,18 +1,20 @@
 /** @type {import('ts-jest').JestConfigWithTsJest} */
-export default {
+const jestConfig = {
   preset: 'ts-jest',
-  testEnvironment: 'node',
+  testEnvironment: 'jsdom',
   verbose: true,
   transform: {
     '^.+\\.(t|j)sx?$': ['@swc/jest'],
   },
-  testEnvironment: 'node',
   testMatch: ['<rootDir>/src/**/*.test.[jt]s?(x)'],
   moduleNameMapper: {
-    '^components/(.*)$': '<rootDir>/src/components/$1',
-    '^lib/(.*)$': '<rootDir>/src/lib/$1',
+    '^modules/(.*)$': '<rootDir>/src/modules/$1',
+    '^server/(.*)$': '<rootDir>/src/server/$1',
+    '^client/(.*)$': '<rootDir>/src/client/$1',
     '^pages/(.*)$': '<rootDir>/src/pages/$1',
-    '^workers/(.*)$': '<rootDir>/src/workers/$1',
+    '^tests/(.*)$': '<rootDir>/src/tests/$1',
   },
   transformIgnorePatterns: ['node_modules/(?!(@47ng/chakra-next)/)'],
 }
+
+export default jestConfig

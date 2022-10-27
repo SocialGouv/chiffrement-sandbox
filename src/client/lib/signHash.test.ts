@@ -5,14 +5,16 @@ beforeAll(() => ready)
 
 describe('signHash', () => {
   test('known vectors', async () => {
+    // Private key:
+    // 3f1fcdac356ae7924e1358d1efc244155a1756e1434df06094c1d868357575ae1f5c53ba82fffdd4191803f484fe685a2c4652e150696fc8fda7d05fcc8a1e15
     const publicKey = sodium.from_hex(
-      '92aee3f6e0a40ad845bfc0ab02aadccd4ae6e8867b31bb02ac053299f6318f6b'
+      '1f5c53ba82fffdd4191803f484fe685a2c4652e150696fc8fda7d05fcc8a1e15'
     )
     const a = sodium.from_hex('d1cd26bb39450181')
     const b = sodium.from_hex('80cc62c261b30c32')
     const c = sodium.from_hex('bfe93254c419de3c')
     const signature = sodium.from_hex(
-      'fba20e44f67faee9bb69cb2a3f99a2753c90fad7d5b8e4f2081032e9911e689a838411dd98432f301ab5a6c99fd26855d7f4545c83644f6e8c90411b519d9a07'
+      '5951e14531b3cd88a3705a7c1ec579a32cf2af323aca5fe802ad334b3a0b6000ecd1e42ebed8cfb8e329c800008c4bce20a60a97e7ea1a8a6a7695a12e6e6403'
     )
     const verified = verifySignedHash(sodium, publicKey, signature, a, b, c)
     expect(verified).toBe(true)
