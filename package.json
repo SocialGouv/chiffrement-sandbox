@@ -16,7 +16,7 @@
     "test:lint": "next lint -d src",
     "test:types": "tsc",
     "test:unit": "jest --coverage",
-    "start": "next start",
+    "start": "NODE_ENV=production TS_NODE_BASEURL=./build node -r tsconfig-paths/register ./build/server/main.js | pino-pretty",
     "keygen": "zx ./scripts/keygen.mjs"
   },
   "dependencies": {
