@@ -2,6 +2,7 @@ import { createServer as createFastifyServer } from 'fastify-micro'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { z } from 'zod'
+import { zodToJsonSchema } from 'zod-to-json-schema'
 import { App } from './types'
 
 export { startServer } from 'fastify-micro'
@@ -29,11 +30,6 @@ type HealthCheckReply = z.TypeOf<typeof healthCheckReply>
 
 export function createServer() {
   const __PROD__ = process.env.NODE_ENV === 'production'
-
-  const databaseName = process.env
-    .POSTGRESQL_URL!.split('/')
-    .reverse()[0]
-    .replace(/\?.*$/, '') // drop the querystring
 
   const app = createFastifyServer({
     name: ['e2esdk', process.env.RELEASE_TAG].join(':'),
@@ -65,14 +61,17 @@ export function createServer() {
         routeOpts: {
           logLevel: 'error',
         },
+        routeResponseSchemaOpts: (zodToJsonSchema(healthCheckReply) as any)
+          .properties,
       },
       healthCheck: async function healthCheck(
         app: App
       ): Promise<HealthCheckReply | false> {
         try {
-          const [{ sizeUsed }] = await app.db<
-            { sizeUsed: number }[]
-          >`SELECT pg_database_size('${databaseName}'::name) AS sizeUsed`
+          let result = await app.db<
+            { sizeUsed: string }[]
+          >`SELECT pg_database_size(current_database()::name) AS size_used`
+          const sizeUsed = parseInt(result[0].sizeUsed)
           const sizeMax = parseInt(process.env.DATABASE_MAX_SIZE_BYTES || '0')
           const sizeRatio = sizeMax > 0 ? sizeUsed / sizeMax : 0
           return {

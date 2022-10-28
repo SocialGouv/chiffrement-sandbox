@@ -2,7 +2,7 @@ import libsodium from 'libsodium-wrappers'
 
 export type Sodium = typeof libsodium
 
-export let sodium: Sodium
+export let sodium: Sodium = libsodium
 
 export const ready = libsodium.ready
 

@@ -1,5 +1,6 @@
-import { Optional } from 'modules/types.js'
+import b64 from '@47ng/codec/dist/b64'
 import type { SignupRequestBody } from '../api/signup.js'
+import type { Optional } from '../types.js'
 import {
   BoxCipher,
   Cipher,
@@ -56,15 +57,15 @@ type ServerKeychain = Array<ServerKeychainItem>
 // --
 
 type Identity = {
-  userID: string
+  userId: string
   signature: KeyPair
   sharing: KeyPair
 }
 
 type PartialIdentity = Optional<Identity, 'sharing' | 'signature'>
 
-export type PublicUserIdentity<KeyType = Key> = {
-  userID: string
+export type PublicuserIdentity<KeyType = Key> = {
+  userId: string
   signaturePublicKey: KeyType
   sharingPublicKey: KeyType
 }
@@ -72,8 +73,8 @@ export type PublicUserIdentity<KeyType = Key> = {
 // --
 
 type Message = {
-  from: PublicUserIdentity<string>
-  to: PublicUserIdentity<string>
+  from: PublicuserIdentity<string>
+  to: PublicuserIdentity<string>
   name: string
   payload: string
   nameFingerprint: string
@@ -131,10 +132,11 @@ export class Client {
 
   // Auth --
 
-  public async signup(userID: string, personalKey: Uint8Array) {
+  public async signup(userId: string, personalKey: Uint8Array) {
+    await this.sodium.ready
     const sharing = generateBoxCipher(this.sodium)
     const identity: Identity = {
-      userID,
+      userId,
       signature: generateSignatureKeyPair(this.sodium),
       sharing: {
         publicKey: sharing.publicKey,
@@ -146,7 +148,7 @@ export class Client {
       key: personalKey,
     }
     const body: SignupRequestBody = {
-      userID,
+      userId,
       signaturePublicKey: this.encode(identity.signature.publicKey),
       sharingPublicKey: this.encode(identity.sharing.publicKey),
       signaturePrivateKey: encrypt(
@@ -179,19 +181,20 @@ export class Client {
     }
   }
 
-  public async login(userID: string, personalKey: Uint8Array) {
+  public async login(userId: string, personalKey: Uint8Array) {
+    await this.sodium.ready
     const res = await fetch(`${this.config.serverURL}/login`, {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
       },
       body: JSON.stringify({
-        userID,
+        userId,
       }),
     })
     // todo: Use a parser
     type ResponseBody = {
-      userID: string
+      userId: string
       signaturePublicKey: string
       sharingPublicKey: string
       signaturePrivateKey: string
@@ -200,14 +203,14 @@ export class Client {
     const responseBody = await this.verifyServerResponse<ResponseBody>(
       'POST',
       res,
-      { userID }
+      { userId }
     )
     const withPersonalKey: SecretBoxCipher = {
       algorithm: 'secretBox',
       key: personalKey,
     }
     const identity: Identity = {
-      userID,
+      userId,
       signature: {
         publicKey: this.decode(responseBody.signaturePublicKey),
         privateKey: decrypt(
@@ -279,6 +282,7 @@ export class Client {
     createdAt = Date.now(),
   }: Omit<KeychainItem, 'createdAt'> &
     Partial<Pick<KeychainItem, 'createdAt'>>) {
+    await this.sodium.ready
     if (this.#state.state !== 'loaded') {
       throw new Error('Account is locked')
     }
@@ -319,8 +323,9 @@ export class Client {
 
   public async sendKey(
     { cipher, name, expiresAt }: KeychainItem,
-    to: PublicUserIdentity
+    to: PublicuserIdentity
   ) {
+    await this.sodium.ready
     if (this.#state.state !== 'loaded') {
       throw new Error('Account must be unlocked before sending keys')
     }
@@ -352,49 +357,53 @@ export class Client {
 
   // User Ops --
 
-  public get publicIdentity(): PublicUserIdentity {
+  public get publicIdentity(): PublicuserIdentity {
     if (this.#state.state !== 'loaded') {
       throw new Error('Account is locked')
     }
     return {
-      userID: this.#state.identity.userID,
+      userId: this.#state.identity.userId,
       sharingPublicKey: this.#state.identity.sharing.publicKey,
       signaturePublicKey: this.#state.identity.signature.publicKey,
     }
   }
 
-  public async getUserIdentity(
-    userID: string
-  ): Promise<PublicUserIdentity | null> {
-    type Response = PublicUserIdentity<string> | null
-    const res = await this.apiCall<Response>('GET', `/user/${userID}`)
+  public async getuserIdentity(
+    userId: string
+  ): Promise<PublicuserIdentity | null> {
+    await this.sodium.ready
+    type Response = PublicuserIdentity<string> | null
+    const res = await this.apiCall<Response>('GET', `/user/${userId}`)
     if (!res) {
       return null
     }
-    if (res.userID !== userID) {
+    if (res.userId !== userId) {
       throw new Error('Mismatching user IDs')
     }
     return this.decodeIdentity(res)
   }
 
   public async getUsersIdentities(
-    userIDs: string[]
-  ): Promise<PublicUserIdentity[]> {
-    const res = await this.apiCall<PublicUserIdentity<string>[]>(
+    userIds: string[]
+  ): Promise<PublicuserIdentity[]> {
+    await this.sodium.ready
+    const res = await this.apiCall<PublicuserIdentity<string>[]>(
       'GET',
-      `/users/${userIDs.join(',')}`
+      `/users/${userIds.join(',')}`
     )
     return res.map(identity => this.decodeIdentity(identity))
   }
 
   // Helpers --
+  // We're not using the sodium conversions because those need it
+  // to be ready, and we want to be able to encode/decode at any time.
 
   public encode(input: Uint8Array) {
-    return this.sodium.to_base64(input)
+    return b64.encode(input)
   }
 
   public decode(input: string) {
-    return this.sodium.from_base64(input)
+    return b64.decode(input)
   }
 
   // Internal APIs --
@@ -551,7 +560,7 @@ export class Client {
       method,
       headers: {
         'content-type': 'application/json',
-        'x-e2esdk-user-id': this.#state.identity.userID,
+        'x-e2esdk-user-id': this.#state.identity.userId,
         'x-e2esdk-timestamp': timestamp,
         'x-e2esdk-signature': this.encode(signature),
       },
@@ -669,20 +678,20 @@ export class Client {
   }
 
   private encodeIdentity(
-    identity: PublicUserIdentity<Key>
-  ): PublicUserIdentity<string> {
+    identity: PublicuserIdentity<Key>
+  ): PublicuserIdentity<string> {
     return {
-      userID: identity.userID,
+      userId: identity.userId,
       sharingPublicKey: this.encode(identity.sharingPublicKey),
       signaturePublicKey: this.encode(identity.signaturePublicKey),
     }
   }
 
   private decodeIdentity(
-    identity: PublicUserIdentity<string>
-  ): PublicUserIdentity<Key> {
+    identity: PublicuserIdentity<string>
+  ): PublicuserIdentity<Key> {
     return {
-      userID: identity.userID,
+      userId: identity.userId,
       sharingPublicKey: this.decode(identity.sharingPublicKey),
       signaturePublicKey: this.decode(identity.signaturePublicKey),
     }
@@ -697,11 +706,13 @@ function getSignatureParts(
   body: string | undefined,
   identity: PartialIdentity
 ) {
-  return [
-    sodium.from_string(identity.userID),
+  const signatureParts = [
+    sodium.from_string(identity.userId),
     sodium.from_string(`${method} ${url}`),
     sodium.from_string(timestamp),
     body ? sodium.from_string(body) : null,
     identity.signature ? identity.signature.publicKey : null,
   ].filter(Boolean) as Uint8Array[]
+  console.dir({ signatureParts: signatureParts.map(x => sodium.to_base64(x)) })
+  return signatureParts
 }

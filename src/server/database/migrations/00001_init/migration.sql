@@ -4,7 +4,7 @@ CREATE TABLE e2esdk_identities (
   sharing_public_key          VARCHAR(128) UNIQUE NOT NULL,
   sharing_private_key         VARCHAR(128) UNIQUE NOT NULL, -- encrypted
   signature_public_key        VARCHAR(128) UNIQUE NOT NULL,
-  signature_private_key       VARCHAR(128) UNIQUE NOT NULL  -- encrypted
+  signature_private_key       VARCHAR(256) UNIQUE NOT NULL  -- encrypted
 );
 
 --------------------------------------------------------------------------------
