@@ -2,6 +2,10 @@ import b64 from '@47ng/codec/dist/b64'
 import type { SignupRequestBody } from '../api/signup.js'
 import type { Optional } from '../types.js'
 import {
+  sign as signClientRequest,
+  verify as verifyServerSignature,
+} from './auth.js'
+import {
   BoxCipher,
   Cipher,
   cipherParser,
@@ -10,11 +14,7 @@ import {
   SecretBoxCipher,
 } from './ciphers.js'
 import { decrypt, encodedCiphertextFormatV1, encrypt } from './encryption.js'
-import {
-  generateSignatureKeyPair,
-  signHash,
-  verifySignedHash,
-} from './signHash.js'
+import { generateSignatureKeyPair, signHash } from './signHash.js'
 import type { Sodium } from './sodium.js'
 import { checkEncryptionPublicKey, checkSignaturePublicKey } from './utils.js'
 
@@ -64,7 +64,7 @@ type Identity = {
 
 type PartialIdentity = Optional<Identity, 'sharing' | 'signature'>
 
-export type PublicuserIdentity<KeyType = Key> = {
+export type PublicUserIdentity<KeyType = Key> = {
   userId: string
   signaturePublicKey: KeyType
   sharingPublicKey: KeyType
@@ -73,8 +73,8 @@ export type PublicuserIdentity<KeyType = Key> = {
 // --
 
 type Message = {
-  from: PublicuserIdentity<string>
-  to: PublicuserIdentity<string>
+  from: PublicUserIdentity<string>
+  to: PublicUserIdentity<string>
   name: string
   payload: string
   nameFingerprint: string
@@ -192,6 +192,7 @@ export class Client {
         userId,
       }),
     })
+    // todo: Error handling
     // todo: Use a parser
     type ResponseBody = {
       userId: string
@@ -323,7 +324,7 @@ export class Client {
 
   public async sendKey(
     { cipher, name, expiresAt }: KeychainItem,
-    to: PublicuserIdentity
+    to: PublicUserIdentity
   ) {
     await this.sodium.ready
     if (this.#state.state !== 'loaded') {
@@ -357,7 +358,7 @@ export class Client {
 
   // User Ops --
 
-  public get publicIdentity(): PublicuserIdentity {
+  public get publicIdentity(): PublicUserIdentity {
     if (this.#state.state !== 'loaded') {
       throw new Error('Account is locked')
     }
@@ -370,9 +371,9 @@ export class Client {
 
   public async getuserIdentity(
     userId: string
-  ): Promise<PublicuserIdentity | null> {
+  ): Promise<PublicUserIdentity | null> {
     await this.sodium.ready
-    type Response = PublicuserIdentity<string> | null
+    type Response = PublicUserIdentity<string> | null
     const res = await this.apiCall<Response>('GET', `/user/${userId}`)
     if (!res) {
       return null
@@ -385,9 +386,9 @@ export class Client {
 
   public async getUsersIdentities(
     userIds: string[]
-  ): Promise<PublicuserIdentity[]> {
+  ): Promise<PublicUserIdentity[]> {
     await this.sodium.ready
-    const res = await this.apiCall<PublicuserIdentity<string>[]>(
+    const res = await this.apiCall<PublicUserIdentity<string>[]>(
       'GET',
       `/users/${userIds.join(',')}`
     )
@@ -399,7 +400,7 @@ export class Client {
   // to be ready, and we want to be able to encode/decode at any time.
 
   public encode(input: Uint8Array) {
-    return b64.encode(input)
+    return b64.encode(input).replace(/={1,2}$/, '')
   }
 
   public decode(input: string) {
@@ -544,28 +545,33 @@ export class Client {
     const url = `${this.config.serverURL}${path}`
     const json = body ? JSON.stringify(body) : undefined
     const timestamp = Date.now().toFixed()
-    const signature = signHash(
+    const signature = signClientRequest(
       this.sodium,
       this.#state.identity.signature.privateKey,
-      ...getSignatureParts(
-        this.sodium,
+      {
+        timestamp,
         method,
         url,
-        timestamp,
-        json,
-        this.#state.identity
-      )
+        body: json,
+        serverPublicKey: this.config.serverPublicKey,
+        clientPublicKey: this.#state.identity.signature.publicKey,
+        userId: this.#state.identity.userId,
+      }
     )
-    const res = await fetch(`${this.config.serverURL}${path}`, {
+    const res = await fetch(url, {
       method,
       headers: {
         'content-type': 'application/json',
         'x-e2esdk-user-id': this.#state.identity.userId,
         'x-e2esdk-timestamp': timestamp,
-        'x-e2esdk-signature': this.encode(signature),
+        'x-e2esdk-signature': signature,
       },
       body: json,
     })
+    if (!res.ok) {
+      // todo: Better error handling
+      throw new Error(res.statusText)
+    }
     return this.verifyServerResponse<ResponseType>(
       method,
       res,
@@ -579,39 +585,43 @@ export class Client {
     identity: PartialIdentity
   ): Promise<Output> {
     const now = Date.now()
-    const signatureHeader = res.headers.get('x-e2esdk-signature')
-    if (!signatureHeader) {
+    const signature = res.headers.get('x-e2esdk-signature')
+    if (!signature) {
       throw new Error('Missing server response signature')
     }
-    const timestampHeader = res.headers.get('x-e2esdk-timestamp')
-    if (!timestampHeader) {
+    const timestamp = res.headers.get('x-e2esdk-timestamp')
+    if (!timestamp) {
       throw new Error('Missing server response timestamp')
     }
-    const signature = this.decode(signatureHeader)
+    const userId = res.headers.get('x-e2esdk-user-id') ?? undefined
     // res.text() will return "" on empty bodies
-    const json = (await res.text()) || undefined
-    const verified = verifySignedHash(
+    const body = (await res.text()) || undefined
+    const verified = verifyServerSignature(
       this.sodium,
       this.config.serverPublicKey,
       signature,
-      ...getSignatureParts(
-        this.sodium,
+      {
+        timestamp,
         method,
-        res.url,
-        timestampHeader,
-        json,
-        identity
-      )
+        url: res.url,
+        body,
+        serverPublicKey: this.config.serverPublicKey,
+        clientPublicKey: identity.signature?.publicKey,
+        userId,
+      }
     )
     if (!verified) {
       throw new Error('Invalid server response signature')
     }
-    if (Math.abs(parseInt(timestampHeader) - now) > 15 * 60 * 1000) {
+    if (userId && userId !== identity.userId) {
+      throw new Error('Mismatching user ID')
+    }
+    if (Math.abs(parseInt(timestamp) - now) > 15 * 60 * 1000) {
       throw new Error(
         'Invalid server response timestamp (outside of +/- 15 minutes interval)'
       )
     }
-    return json ? JSON.parse(json) : undefined
+    return body ? JSON.parse(body) : undefined
   }
 
   // --
@@ -678,8 +688,8 @@ export class Client {
   }
 
   private encodeIdentity(
-    identity: PublicuserIdentity<Key>
-  ): PublicuserIdentity<string> {
+    identity: PublicUserIdentity<Key>
+  ): PublicUserIdentity<string> {
     return {
       userId: identity.userId,
       sharingPublicKey: this.encode(identity.sharingPublicKey),
@@ -688,8 +698,8 @@ export class Client {
   }
 
   private decodeIdentity(
-    identity: PublicuserIdentity<string>
-  ): PublicuserIdentity<Key> {
+    identity: PublicUserIdentity<string>
+  ): PublicUserIdentity<Key> {
     return {
       userId: identity.userId,
       sharingPublicKey: this.decode(identity.sharingPublicKey),

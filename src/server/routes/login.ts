@@ -17,7 +17,7 @@ export default async function loginRoutes(app: App) {
   }>(
     '/login',
     {
-      preValidation: [app.publicKeyAuth()],
+      preValidation: app.usePublicKeyAuth(),
       schema: {
         headers: zodToJsonSchema(publicKeyAuthHeaders),
         response: {
