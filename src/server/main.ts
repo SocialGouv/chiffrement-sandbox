@@ -1,10 +1,9 @@
-import dotenv from 'dotenv'
 import { fileURLToPath } from 'node:url'
+import './env.js'
 import { createServer, startServer } from './server.js'
 
 export async function main() {
   // Setup environment
-  dotenv.config()
   const appServer = createServer()
   await startServer(appServer)
 }

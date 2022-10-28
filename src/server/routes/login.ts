@@ -1,3 +1,4 @@
+import { getOwnIdentity } from 'server/database/models/identity.js'
 import { zodToJsonSchema } from 'zod-to-json-schema'
 import {
   PublicKeyAuthHeaders,
@@ -25,16 +26,13 @@ export default async function loginRoutes(app: App) {
       },
     },
     async function login(req, res) {
-      const { userID } = req.identity
-      // todo: Fetch from database
-      const signature = app.sodium.crypto_sign_keypair('base64')
-      const sharing = app.sodium.crypto_box_keypair('base64')
-      return res.send({
-        signaturePublicKey: signature.publicKey,
-        signaturePrivateKey: signature.privateKey,
-        sharingPublicKey: sharing.publicKey,
-        sharingPrivateKey: sharing.privateKey,
-      })
+      const identity = await getOwnIdentity(app.db, req.identity.userID)
+      if (!identity) {
+        throw app.httpErrors.notFound(
+          `No identity found for user id ${req.identity.userID}`
+        )
+      }
+      return res.send(identity)
     }
   )
 }

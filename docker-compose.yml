@@ -1,0 +1,20 @@
+# Compose file for local development, external services only.
+
+version: '3'
+
+services:
+  db:
+    image: postgres:14.1
+    ports:
+      - '5432:5432'
+    environment:
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=e2esdk
+    volumes:
+      - .volumes/storage/db:/var/lib/postgresql/data
+
+  wait:
+    image: jwilder/dockerize
+    command: dockerize -wait tcp://db:5432 -timeout 30s
+    links:
+      - db

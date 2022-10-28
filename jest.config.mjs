@@ -8,6 +8,11 @@ const jestConfig = {
   },
   testMatch: ['<rootDir>/src/**/*.test.[jt]s?(x)'],
   transformIgnorePatterns: ['node_modules/(?!(@47ng/chakra-next)/)'],
+  // ESM support
+  moduleNameMapper: {
+    '^(\\.{1,2}/.*)\\.js$': '$1',
+  },
+  extensionsToTreatAsEsm: ['.ts', '.tsx'],
 }
 
 export default jestConfig

@@ -7,6 +7,7 @@ import {
   signupRequestBody,
   SignupRequestBody,
 } from '../../modules/api/signup.js'
+import { createIdentity } from '../database/models/identity.js'
 import { App } from '../types'
 
 export default async function signupRoutes(app: App) {
@@ -28,8 +29,7 @@ export default async function signupRoutes(app: App) {
       },
     },
     async function signup(req, res) {
-      // todo: Store in database
-      req.log.info({ body: req.body })
+      await createIdentity(app.db, req.body)
       return res.status(201).send()
     }
   )

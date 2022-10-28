@@ -1,3 +1,4 @@
+import { Optional } from 'modules/types.js'
 import type { SignupRequestBody } from '../api/signup.js'
 import {
   BoxCipher,
@@ -60,8 +61,7 @@ type Identity = {
   sharing: KeyPair
 }
 
-type PartialIdentity = Pick<Identity, 'userID'> &
-  Partial<Omit<Identity, 'userID'>>
+type PartialIdentity = Optional<Identity, 'sharing' | 'signature'>
 
 export type PublicUserIdentity<KeyType = Key> = {
   userID: string

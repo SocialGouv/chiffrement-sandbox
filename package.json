@@ -16,8 +16,11 @@
     "test": "run-p test:*",
     "test:types": "tsc",
     "test:unit": "jest --coverage",
-    "start": "NODE_ENV=production TS_NODE_BASEURL=./build node -r tsconfig-paths/register ./build/server/main.js | pino-pretty",
-    "keygen": "zx ./scripts/keygen.mjs"
+    "start": "NODE_ENV=production node ./build/server/main.js",
+    "keygen": "zx ./scripts/keygen.mjs",
+    "db:start": "./scripts/db-start.sh",
+    "db:stop": "./scripts/db-stop.sh",
+    "db:migrations": "zx ./scripts/migrations.mjs"
   },
   "dependencies": {
     "@chakra-ui/react": "^2.3.6",
@@ -35,6 +38,7 @@
     "mitata": "^0.1.6",
     "next": "^12.3.1",
     "next-usequerystate": "^1.7.2",
+    "postgres": "^3.3.1",
     "pretty-bytes": "^6.0.0",
     "pretty-ms": "^8.0.0",
     "react": "^18.2.0",

@@ -2,7 +2,9 @@ import '@fastify/sensible'
 import type { FastifyPluginAsync, FastifyRequest } from 'fastify'
 import fp from 'fastify-plugin'
 import type { PublicUserIdentity } from '../../modules/crypto/client.js'
-import { signHash } from '../../modules/crypto/signHash.js'
+import { signHash, verifySignedHash } from '../../modules/crypto/signHash.js'
+import type { Optional } from '../../modules/types'
+import { getPublicIdentity } from '../database/models/identity.js'
 import type { App } from '../types.js'
 
 type PublicKeyAuthOptions = {
@@ -17,10 +19,10 @@ declare module 'fastify' {
   }
 
   interface FastifyRequest {
-    identity: Pick<PublicUserIdentity, 'userID'> &
-      Partial<
-        Pick<PublicUserIdentity, 'signaturePublicKey' | 'sharingPublicKey'>
-      >
+    identity: Optional<
+      PublicUserIdentity<string>,
+      'signaturePublicKey' | 'sharingPublicKey'
+    >
   }
 }
 
@@ -28,6 +30,7 @@ const publicKeyAuthPlugin: FastifyPluginAsync = async (app: App) => {
   const serverSignaturePrivateKey = app.sodium.from_base64(
     process.env.SIGNATURE_PRIVATE_KEY!
   )
+
   app.decorate(
     'publicKeyAuth',
     ({ publicRoute = false }: PublicKeyAuthOptions = {}) =>
@@ -55,12 +58,30 @@ const publicKeyAuthPlugin: FastifyPluginAsync = async (app: App) => {
         if (!signature) {
           throw app.httpErrors.unauthorized('Missing x-e2esdk-signature header')
         }
-        // todo: Load user identity from database
-        // todo: Verify signature
+        const identity = await getPublicIdentity(app.db, userID)
+        if (!identity) {
+          throw app.httpErrors.unauthorized(
+            `No identity found for user ID ${userID}`
+          )
+        }
+        try {
+          if (
+            !verifySignedHash(
+              app.sodium,
+              app.sodium.from_base64(identity.signaturePublicKey),
+              app.sodium.from_base64(signature)
+              // todo: Add signature elements
+            )
+          ) {
+            throw new Error()
+          }
+        } catch {
+          throw app.httpErrors.unauthorized('Invalid request signature')
+        }
         req.identity = {
           userID,
-          sharingPublicKey: app.sodium.crypto_box_keypair().publicKey,
-          signaturePublicKey: app.sodium.crypto_sign_keypair().publicKey,
+          sharingPublicKey: identity.sharingPublicKey,
+          signaturePublicKey: identity.signaturePublicKey,
         }
       }
   )
@@ -97,8 +118,8 @@ const publicKeyAuthPlugin: FastifyPluginAsync = async (app: App) => {
 export default fp(publicKeyAuthPlugin, {
   fastify: '4.x',
   name: 'publicKeyAuth',
-  dependencies: ['sodium'],
+  dependencies: ['sodium', 'database'],
   decorators: {
-    fastify: ['sodium'],
+    fastify: ['sodium', 'db'],
   },
 })

@@ -1,27 +1,43 @@
-import { checkEnv } from '@47ng/check-env'
 import { createServer as createFastifyServer } from 'fastify-micro'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { z } from 'zod'
+import { App } from './types'
 
 export { startServer } from 'fastify-micro'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
+const healthCheckReply = z.object({
+  services: z.object({
+    database: z.object({
+      status: z.enum(['starting', 'ok', 'down']),
+      sizeUsed: z.number(),
+      sizeMax: z.number(),
+      sizeRatio: z.number(),
+    }),
+  }),
+  metrics: z.object({
+    eventLoopDelay: z.number(),
+    rssBytes: z.number(),
+    heapUsed: z.number(),
+    eventLoopUtilized: z.number(),
+  }),
+})
+
+type HealthCheckReply = z.TypeOf<typeof healthCheckReply>
+
 export function createServer() {
   const __PROD__ = process.env.NODE_ENV === 'production'
-  checkEnv({
-    required: [
-      'DEPLOYMENT_URL',
-      'SIGNATURE_PUBLIC_KEY',
-      'SIGNATURE_PRIVATE_KEY',
-      'NEXT_PUBLIC_RELEASE_TAG',
-      'POSTGRESQL_URL',
-      'RELEASE_TAG',
-    ],
-  })
+
+  const databaseName = process.env
+    .POSTGRESQL_URL!.split('/')
+    .reverse()[0]
+    .replace(/\?.*$/, '') // drop the querystring
 
   const app = createFastifyServer({
     name: ['e2esdk', process.env.RELEASE_TAG].join(':'),
+
     redactEnv: __PROD__ ? ['POSTGRESQL_URL', 'SIGNATURE_PRIVATE_KEY'] : [],
     // Give Next.js time to setup in development
     pluginTimeout: __PROD__ ? 10_000 : 60_000,
@@ -50,77 +66,37 @@ export function createServer() {
           logLevel: 'error',
         },
       },
-      // healthCheck: async function healthCheck(
-      //   app: App
-      // ): Promise<HealthCheckReply | false> {
-      //   try {
-      //     const database: HealthCheckReply['services']['database'] = {
-      //       status: Boolean(app.prisma) ? 'down' : 'starting',
-      //       sizeMax: parseInt(process.env.DATABASE_MAX_SIZE_BYTES || '0'),
-      //       sizeUsed: 0,
-      //       sizeRatio: 0,
-      //     }
-      //     if (app.prisma) {
-      //       const result = await app.prisma.$queryRawUnsafe<
-      //         { pg_size: number }[]
-      //       >(`select pg_database_size('${databaseName}'::name) as pg_size;`)
-      //       const { pg_size } = result[0]
-      //       database.sizeUsed = pg_size
-      //       database.sizeRatio =
-      //         database.sizeMax > 0 ? database.sizeUsed / database.sizeMax : 0
-      //       database.status = 'ok'
-      //     }
-      //     const redis: HealthCheckReply['services']['redis'] = {
-      //       status: Boolean(app.redis?.client) ? 'down' : 'starting',
-      //       memoryMax: 0,
-      //       memoryUsed: 0,
-      //       memoryRatio: 0,
-      //     }
-      //     if (app.redis?.client) {
-      //       const redisInfo = (await app.redis.client.info('memory'))
-      //         .split('\r\n')
-      //         .map(line => line.trim())
-      //         .reduce(
-      //           (obj, line) => {
-      //             const [key, value] = line.split(':')
-      //             return {
-      //               ...obj,
-      //               [key]: Number.isSafeInteger(+value)
-      //                 ? parseInt(value)
-      //                 : value,
-      //             }
-      //           },
-      //           {
-      //             used_memory: 0,
-      //             maxmemory: 0,
-      //           }
-      //         )
-      //       redis.memoryUsed = redisInfo.used_memory
-      //       redis.memoryMax = redisInfo.maxmemory
-      //       redis.memoryRatio =
-      //         redis.memoryMax > 0 ? redis.memoryUsed / redis.memoryMax : 0
-      //       redis.status = 'ok'
-      //     }
-      //     return {
-      //       services: {
-      //         database,
-      //         redis,
-      //       },
-      //       metrics: app.memoryUsage(),
-      //     }
-      //   } catch (error) {
-      //     app.log.error(error)
-      //     app.sentry.report(error)
-      //     return false
-      //   }
-      // },
+      healthCheck: async function healthCheck(
+        app: App
+      ): Promise<HealthCheckReply | false> {
+        try {
+          const [{ sizeUsed }] = await app.db<
+            { sizeUsed: number }[]
+          >`SELECT pg_database_size('${databaseName}'::name) AS sizeUsed`
+          const sizeMax = parseInt(process.env.DATABASE_MAX_SIZE_BYTES || '0')
+          const sizeRatio = sizeMax > 0 ? sizeUsed / sizeMax : 0
+          return {
+            services: {
+              database: {
+                status: 'ok',
+                sizeMax,
+                sizeUsed,
+                sizeRatio,
+              },
+            },
+            metrics: app.memoryUsage(),
+          }
+        } catch (error) {
+          app.log.error(error)
+          app.sentry.report(error)
+          return false
+        }
+      },
     },
     cleanupOnExit: async app => {
       app.log.info('Closing connections to backing services')
       try {
-        await Promise.all([
-          // app.db.$disconnect(),
-        ])
+        await app.db.end({ timeout: 5_000 })
       } catch (error) {
         app.log.error(error)
         app.sentry.report(error)
