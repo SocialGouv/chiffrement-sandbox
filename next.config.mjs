@@ -1,5 +1,3 @@
-import './src/server/env.js'
-
 /**
  * @type {import('next').NextConfig}
  */
