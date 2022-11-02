@@ -14,7 +14,7 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
 }) => {
   return (
     <>
-      <Flex py={2} px={4} gap={2} alignItems="center" {...props} display="none">
+      <Flex py={2} px={4} gap={2} alignItems="center" {...props}>
         <Text fontWeight="semibold">
           <Icon as={TbSalt} mr={1} transform="translateY(2px)" />
           Sodium Sandbox
