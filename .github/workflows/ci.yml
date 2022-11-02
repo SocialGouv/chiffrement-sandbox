@@ -50,6 +50,12 @@ jobs:
 
       - name: Build
         run: yarn build
+        env:
+          # For CI only
+          DEPLOYMENT_URL: http://localhost:3000
+          SIGNATURE_PUBLIC_KEY: WBzLAiOe_Nxghl53ECBrXVk9BlgB-wnZ4C6f0D3njHw
+          SIGNATURE_PRIVATE_KEY: 8aZn7-XNwVLF0Vnb-eHjebBgQ8BfLWzOTmrfpw-8vNNYHMsCI5783GCGXncQIGtdWT0GWAH7CdngLp_QPeeMfA
+
 
       # - name: Functional tests
       #   run: yarn e2e
