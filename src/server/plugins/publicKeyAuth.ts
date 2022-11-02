@@ -6,6 +6,7 @@ import {
   verify as verifyClientSignature,
 } from '../../modules/crypto/auth.js'
 import type { PublicUserIdentity } from '../../modules/crypto/client.js'
+import { isFarFromCurrentTime } from '../../modules/time.js'
 import { getPublicIdentity } from '../database/models/identity.js'
 import type { App } from '../types.js'
 
@@ -46,7 +47,7 @@ const publicKeyAuthPlugin: FastifyPluginAsync = async (app: App) => {
         if (!timestamp) {
           throw app.httpErrors.badRequest('Missing x-e2esdk-timestamp header')
         }
-        if (Math.abs(parseInt(timestamp) - Date.now()) > 15 * 60 * 1000) {
+        if (isFarFromCurrentTime(timestamp)) {
           throw app.httpErrors.forbidden(
             'Request timestamp is too far off current time'
           )
@@ -96,7 +97,7 @@ const publicKeyAuthPlugin: FastifyPluginAsync = async (app: App) => {
   app.addHook(
     'onSend',
     async function signServerResponse(req, res, body: string) {
-      const timestamp = Date.now().toFixed()
+      const timestamp = new Date().toISOString()
       const signature = signResponse(app.sodium, serverPrivateKey, {
         timestamp,
         method: req.method,

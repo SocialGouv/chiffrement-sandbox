@@ -109,3 +109,32 @@ export function checkEncryptionPublicKey(
   const derivedPublicKey = sodium.crypto_scalarmult_base(privateKey)
   return sodium.compare(derivedPublicKey, publicKey) === 0
 }
+
+/**
+ * Apply padding randomly around a string to ensure a constant output length.
+ *
+ * Example, to pad the input "Hello, world!" to an output of 20,
+ * there are 20 - 13 = 7 characters to add.
+ * We could have 4 at the beginning and 3 at the end,
+ * or 2 at the beginning and 5 at the end, etc..
+ * The cutoff point is decided randomly.
+ *
+ * @param input The input string to pad
+ * @param outputLength The desired output length
+ * @param paddingChar The character to use for padding (defaults to a ` ` space character)
+ */
+export function randomPad(
+  input: string,
+  outputLength: number,
+  paddingChar = ' '
+) {
+  const padSize = outputLength - input.length
+  if (padSize <= 0) {
+    return input
+  }
+  const padStart = Math.round(Math.random() * padSize)
+  const padEnd = padSize - padStart
+  return input
+    .padStart(outputLength - padEnd, paddingChar)
+    .padEnd(outputLength, paddingChar)
+}

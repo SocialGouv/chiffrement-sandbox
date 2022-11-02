@@ -96,8 +96,9 @@ const KeyDerivationTestPage: NextPage = () => {
 
   const onClick = React.useCallback(async () => {
     dispatch({ type: 'process' })
-    const tick = performance.now()
+    performance.mark('key-derivation:mainThread:start')
     const { worker } = await import('client/workers/keyDerivation.controller')
+    performance.mark('key-derivation:mainThread:workerLoaded')
     const key = await worker(
       keySize,
       input,
@@ -106,11 +107,16 @@ const KeyDerivationTestPage: NextPage = () => {
       1 << memorySize,
       algorithm
     )
-    const tock = performance.now()
+    performance.mark('key-derivation:mainThread:done')
+    const measure = performance.measure(
+      'key-derivation:mainThread',
+      `key-derivation:mainThread:start`,
+      `key-derivation:mainThread:done`
+    )
     dispatch({
       type: 'result',
       output: key,
-      processingTime: tock - tick,
+      processingTime: measure.duration,
     })
   }, [input, keySize, memorySize, computationComplexity, algorithm, salt])
 

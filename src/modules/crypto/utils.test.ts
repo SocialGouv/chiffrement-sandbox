@@ -3,6 +3,7 @@ import {
   checkEncryptionPublicKey,
   checkSignaturePublicKey,
   concat,
+  randomPad,
   split,
 } from './utils'
 
@@ -44,5 +45,36 @@ describe('utils', () => {
     expect(
       checkEncryptionPublicKey(sodium, eve.publicKey, alice.privateKey)
     ).toBe(false)
+  })
+
+  describe('randomPad', () => {
+    test('input shorted than outputLength returns unpadded', () => {
+      const expected = 'Hello, world!'
+      const received = randomPad(expected, 5)
+      expect(received).toEqual(expected)
+    })
+    test('input of length outputLength returns unpadded', () => {
+      const expected = 'Hello, world!'
+      const received = randomPad(expected, expected.length)
+      expect(received).toEqual(expected)
+    })
+    test('1 character of padding', () => {
+      const expected = 'Hello, world!'
+      const received = randomPad(expected, expected.length + 1)
+      expect(received.length).toEqual(expected.length + 1)
+      expect(received).toMatch(/^ Hello, world!$|^Hello, world! $/)
+    })
+    test.each(Array.from({ length: 10 }, (_, x) => 3 * x + 5))(
+      '%d character of padding',
+      padLength => {
+        const expected = 'Hello, world!'
+        const received = randomPad(expected, expected.length + padLength)
+        expect(received.length).toEqual(expected.length + padLength)
+        expect(received).toMatch(/^ *Hello, world! *$/)
+        const padLeft = received.length - received.trimStart().length
+        const padRight = received.length - received.trimEnd().length
+        expect(padLeft + padRight).toEqual(padLength)
+      }
+    )
   })
 })

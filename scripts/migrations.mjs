@@ -11,13 +11,14 @@ import 'zx/globals'
 
 const MIGRATIONS_TABLE_NAME = 'e2esdk_migrations'
 const MIGRATIONS_DIR = resolve(__dirname, '../src/server/database/migrations')
+const SEED_SCRIPT = resolve(MIGRATIONS_DIR, '../seed.mjs')
 const INDEX_LEN = 5 // number of digits in indices, eg 00042
 
 const indexRegexp = new RegExp(`^[0-9]{${INDEX_LEN}}_`)
 
 // Usage --
 
-if (argv.help) {
+function printUsage() {
   console.log(`
   ${chalk.bold('Manage PostgreSQL database migrations')}
 
@@ -33,12 +34,22 @@ if (argv.help) {
     ${chalk.green('•')} apply            ${chalk.dim(
     'Apply all pending migrations'
   )}
+    ${chalk.green('•')} seed             ${chalk.dim(
+    `Run seed script (${SEED_SCRIPT})`
+  )}
     ${chalk.green('•')} reset            ${chalk.dim('Reset the database')}
 
   Options:
-    --help             Show this message
-    --dry-run          Don't actually apply migrations, print what would happen.
+    --help                      Show this message
+    --dry-run                   Don't actually apply migrations, print what would happen.
+    --dangerously-skip-confirm  Don't confirm database reset ${chalk.italic.dim(
+      "(you've been warned)"
+    )}
 `)
+}
+
+if (argv.help) {
+  printUsage()
   process.exit(0)
 }
 
@@ -69,10 +80,19 @@ if (argv._[0] === 'apply') {
   process.exit(0)
 }
 
+if (argv._[0] === 'seed') {
+  await runSeedScript()
+  process.exit(0)
+}
+
 if (argv._[0] === 'reset') {
   await resetDatabase()
   process.exit(0)
 }
+
+console.error('Missing required operation')
+printUsage()
+process.exit(1)
 
 // Operations --
 
@@ -207,6 +227,18 @@ async function applyPendingMigrations() {
   }
 }
 
+async function runSeedScript() {
+  printConnectionInfo()
+  console.info(
+    chalk.green(`🌱 Seeding database using script `) + chalk.dim(SEED_SCRIPT)
+  )
+  const { apply } = await import(SEED_SCRIPT)
+  if (!dryRun) {
+    await apply(sql)
+  }
+  console.info(`The database has been seeded.`)
+}
+
 async function resetDatabase() {
   printConnectionInfo()
   console.warn(
@@ -231,10 +263,12 @@ async function resetDatabase() {
       }))
     )
   }
-  const confirm = await question('Enter the database name to confirm: ')
-  if (confirm !== sql.options.database) {
-    console.info('Aborted')
-    return
+  if (!argv['dangerously-skip-confirm']) {
+    const confirm = await question('Enter the database name to confirm: ')
+    if (confirm !== sql.options.database) {
+      console.info('Aborted')
+      return
+    }
   }
   await sql`DROP SCHEMA public CASCADE`
   await sql`CREATE SCHEMA public`

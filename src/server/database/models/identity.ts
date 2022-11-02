@@ -1,6 +1,6 @@
 import type { Sql } from 'postgres'
 import { z } from 'zod'
-import { getFirst } from '../helpers.js'
+import { getFirst } from './helpers.js'
 
 export const TABLE_NAME = 'e2esdk_identities'
 
@@ -32,7 +32,7 @@ export async function getOwnIdentity(sql: Sql, userId: string) {
   const result: Row[] = await sql`
     SELECT ${sql(columns)}
     FROM ${sql(TABLE_NAME)}
-    WHERE user_id = ${sql(userId)}
+    WHERE user_id = ${userId}
     LIMIT 1
   `
   return getFirst(result)
@@ -44,7 +44,7 @@ export async function getPublicIdentity(sql: Sql, userId: string) {
   const result: Row[] = await sql`
     SELECT ${sql(columns)}
     FROM ${sql(TABLE_NAME)}
-    WHERE user_id = ${sql(userId)}
+    WHERE user_id = ${userId}
     LIMIT 1
   `
   return getFirst(result)

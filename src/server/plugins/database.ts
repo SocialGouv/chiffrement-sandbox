@@ -14,6 +14,17 @@ const databasePlugin: FastifyPluginAsync = async (app: App) => {
     'db',
     postgres(process.env.POSTGRESQL_URL!, {
       transform: postgres.camel,
+      debug:
+        process.env.DEBUG &&
+        function debugDatabaseQuery(connection, query, parameters, paramTypes) {
+          app.log.debug({
+            msg: 'database:debug',
+            connection,
+            query: query.replace(/\s+/gm, ' ').trim(), // minify
+            parameters,
+            paramTypes,
+          })
+        },
     })
   )
 }

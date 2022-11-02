@@ -1,0 +1,82 @@
+import type { Sql } from 'postgres'
+import { z } from 'zod'
+import type { PublicUserIdentity } from '../../../modules/crypto/client.js'
+import { getFirst } from './helpers.js'
+
+export const TABLE_NAME = 'e2esdk_shared_keys'
+
+export const sharedKeySchema = z.object({
+  createdAt: z.string(),
+  expiresAt: z.string().nullable(),
+  toUserId: z.string(),
+  fromUserId: z.string(),
+  fromSharingPublicKey: z.string(),
+  fromSignaturePublicKey: z.string(),
+  name: z.string(),
+  payload: z.string(),
+  nameFingerprint: z.string(),
+  payloadFingerprint: z.string(),
+  signature: z.string(),
+})
+
+export type SharedKeySchema = z.TypeOf<typeof sharedKeySchema>
+
+export function storeSharedKey(sql: Sql, sharedKey: SharedKeySchema) {
+  return sql`INSERT INTO ${sql(TABLE_NAME)} ${sql(sharedKey)}`
+}
+
+export async function findSharedKey(
+  sql: Sql,
+  from: string,
+  to: string,
+  payloadFingerprint: string
+) {
+  const results: SharedKeySchema[] = await sql`
+    SELECT *
+    FROM ${sql(TABLE_NAME)}
+    WHERE ${sql('fromUserId')} = ${from}
+    AND ${sql('toUserId')} = ${to}
+    AND ${sql('payloadFingerprint')} = ${payloadFingerprint}
+    LIMIT 1
+  `
+  return getFirst(results)
+}
+
+export function getKeysSharedWithMe(
+  sql: Sql,
+  userId: string
+): Promise<SharedKeySchema[]> {
+  return sql`
+    SELECT *
+    FROM ${sql(TABLE_NAME)}
+    WHERE ${sql('toUserId')} = ${userId}
+  `
+}
+
+export function getKeysSharedByMe(
+  sql: Sql,
+  identity: PublicUserIdentity<string>
+): Promise<SharedKeySchema[]> {
+  return sql`
+    SELECT *
+    FROM ${sql(TABLE_NAME)}
+    WHERE ${sql('fromUserId')} = ${identity.userId}
+    AND ${sql('fromSharingPublicKey')} = ${identity.sharingPublicKey}
+    AND ${sql('fromSignaturePublicKey')} = ${identity.signaturePublicKey}
+  `
+}
+
+export function deleteSharedKey(
+  sql: Sql,
+  from: string,
+  to: string,
+  payloadFingerprint: string
+) {
+  return sql`
+    DELETE
+    FROM ${sql(TABLE_NAME)}
+    WHERE ${sql('fromUserId')} = ${from}
+    AND ${sql('toUserId')} = ${to}
+    AND ${sql('payloadFingerprint')} = ${payloadFingerprint}
+  `
+}

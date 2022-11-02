@@ -16,7 +16,7 @@ import { useClient } from '../client/components/ClientProvider'
 import { generateSecretBoxCipher } from '../modules/crypto/ciphers'
 
 const SignupPage: NextPage = () => {
-  const [userId, setuserId] = React.useState('')
+  const [userId, setUserId] = React.useState('')
   const [personalKey, setPersonalKey] = React.useState('')
   const client = useClient()
   const signUp = React.useCallback(async () => {
@@ -34,13 +34,13 @@ const SignupPage: NextPage = () => {
             <Input
               fontFamily="mono"
               value={userId}
-              onChange={e => setuserId(e.target.value)}
+              onChange={e => setUserId(e.target.value)}
             />
             <InputRightElement>
               <IconButton
                 aria-label="Randomize"
                 icon={<FiRefreshCw />}
-                onClick={() => setuserId(window.crypto.randomUUID())}
+                onClick={() => setUserId(window.crypto.randomUUID())}
                 rounded="full"
                 variant="ghost"
               />

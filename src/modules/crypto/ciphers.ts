@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { sodium, Sodium } from './sodium.js'
+import { randomPad } from './utils.js'
 
 export type BoxCipher<DataType = Uint8Array> = {
   algorithm: 'box'
@@ -28,6 +29,8 @@ export function generateBoxCipher(
   sodium: Sodium,
   nonce?: Uint8Array
 ): BoxCipher {
+  // todo: These make little sense, box & sealedBox are supposed to be
+  // DH over different identities.
   const keyPair = sodium.crypto_box_keypair()
   return {
     algorithm: 'box',
@@ -38,6 +41,8 @@ export function generateBoxCipher(
 }
 
 export function generateSealedBoxCipher(sodium: Sodium): SealedBoxCipher {
+  // todo: These make little sense, box & sealedBox are supposed to be
+  // DH over different identities.
   const keyPair = sodium.crypto_box_keypair()
   return {
     algorithm: 'sealedBox',
@@ -55,6 +60,47 @@ export function generateSecretBoxCipher(
     key: sodium.crypto_secretbox_keygen(),
     nonce,
   }
+}
+
+// Serializer --
+
+/**
+ * @internal Exported for tests
+ *
+ * Stringify the given cipher, with padding to ensure constant output length.
+ *
+ * @warning This will not encrypt the keys, they will only be base64 encoded as-is.
+ * This should only be used to feed to the `encrypt` function.
+ */
+export function _serializeCipher(sodium: Sodium, cipher: Cipher) {
+  if (cipher.algorithm === 'box') {
+    // todo: Does this make sense?
+    const payload: Omit<BoxCipher<string>, 'nonce'> = {
+      algorithm: cipher.algorithm,
+      publicKey: sodium.to_base64(cipher.publicKey),
+      privateKey: sodium.to_base64(cipher.privateKey),
+    }
+    return randomPad(JSON.stringify(payload), 150)
+  }
+  if (cipher.algorithm === 'sealedBox') {
+    if (!cipher.privateKey) {
+      throw new Error('Missing private key in sealedBox cipher')
+    }
+    const payload: SealedBoxCipher<string> = {
+      algorithm: cipher.algorithm,
+      publicKey: sodium.to_base64(cipher.publicKey),
+      privateKey: sodium.to_base64(cipher.privateKey),
+    }
+    return randomPad(JSON.stringify(payload), 150)
+  }
+  if (cipher.algorithm === 'secretBox') {
+    const payload: Omit<SecretBoxCipher<string>, 'nonce'> = {
+      algorithm: cipher.algorithm,
+      key: sodium.to_base64(cipher.key),
+    }
+    return randomPad(JSON.stringify(payload), 150)
+  }
+  throw new Error('Unsupported cipher algorithm')
 }
 
 // Parsers --
@@ -97,4 +143,25 @@ export function isSealedBoxCipher(cipher: Cipher): cipher is SealedBoxCipher {
 
 export function isSecretBoxCipher(cipher: Cipher): cipher is SecretBoxCipher {
   return secretBoxCipherParser.safeParse(cipher).success
+}
+
+// Utility --
+
+export function memzeroCipher(sodium: Sodium, cipher: Cipher) {
+  if (cipher.algorithm === 'box') {
+    sodium.memzero(cipher.privateKey)
+    if (cipher.nonce) {
+      sodium.memzero(cipher.nonce)
+    }
+  }
+  if (cipher.algorithm === 'sealedBox' && cipher.privateKey) {
+    sodium.memzero(cipher.privateKey)
+  }
+  if (cipher.algorithm === 'secretBox') {
+    sodium.memzero(cipher.key)
+    if (cipher.nonce) {
+      sodium.memzero(cipher.nonce)
+    }
+  }
+  throw new Error('Unsupported cipher algorithm')
 }

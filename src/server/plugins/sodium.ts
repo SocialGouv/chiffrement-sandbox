@@ -10,7 +10,8 @@ declare module 'fastify' {
 }
 
 const sodiumPlugin: FastifyPluginAsync = async (app: App) => {
-  app.decorate('sodium', await initializeSodium())
+  const sodium = await initializeSodium()
+  app.decorate('sodium', sodium)
 }
 
 export default fp(sodiumPlugin, {

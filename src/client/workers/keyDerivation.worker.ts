@@ -11,17 +11,20 @@ async function keyDerivation(
   memorySize: number,
   algorithm: number
 ) {
-  const tick = performance.now()
-  await sodium.ready
-
-  console.dir({
-    OPSLIMIT_SENSITIVE: sodium.crypto_pwhash_OPSLIMIT_SENSITIVE,
-    mem: sodium.crypto_pwhash_MEMLIMIT_MODERATE / 1024,
-    memorySize,
+  performance.mark('key-derivation:worker:start', {
+    detail: {
+      keySize,
+      input,
+      salt,
+      complexity,
+      memorySize,
+      algorithm,
+    },
   })
-
+  await sodium.ready
+  performance.mark('key-derivation:worker:sodiumReady')
   const saltBuffer = sodium.from_hex(salt)
-  const tack = performance.now()
+  performance.mark('key-derivation:worker:saltDecoded')
   const key = sodium.crypto_pwhash(
     keySize,
     input,
@@ -31,12 +34,12 @@ async function keyDerivation(
     algorithm,
     'base64'
   )
-  const tock = performance.now()
-  console.dir({
-    'sodium getting ready': tack - tick,
-    'key derivation': tock - tack,
-    total: tock - tick,
-  })
+  performance.mark('key-derivation:worker:done')
+  performance.measure(
+    'key-derivation:worker',
+    `key-derivation:worker:start`,
+    `key-derivation:worker:done`
+  )
   return key
 }
 

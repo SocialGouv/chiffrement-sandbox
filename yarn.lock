@@ -7,14 +7,6 @@
   resolved "https://registry.yarnpkg.com/@47ng/check-env/-/check-env-3.0.0.tgz#b23f61c33c5789746ce61b9e43ef814e105659b6"
   integrity sha512-PCUdJqcX8EhnUoH2ELHSYNq9lnhHOnf5LUj+GLA+Vy3ChFrCLy974ArIulwbhhkg5xIvzKbulWeXTVHcWBASeA==
 
-"@47ng/codec@^1.1.0":
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/@47ng/codec/-/codec-1.1.0.tgz#ff4a3e37855fb45273152c9d8dd99f2400b57f08"
-  integrity sha512-gvtA2RjijvEiYQbURPM6/Z+ySfS4lmtQ9NovDzzT+5ekeZ3M5pGiotlT94Qd+At4AYwWp7mWJLvxFn3JR+BZbA==
-  dependencies:
-    "@stablelib/base64" "^1.0.1"
-    "@stablelib/hex" "^1.0.1"
-
 "@ampproject/remapping@^2.1.0":
   version "2.2.0"
   resolved "https://registry.yarnpkg.com/@ampproject/remapping/-/remapping-2.2.0.tgz#56c133824780de3174aed5ab6834f3026790154d"
@@ -1807,16 +1799,6 @@
   integrity sha512-BPS4ynJW/o92PUR4wgriz2Ud5gpST5vz6GQfMixEDK0Z8ZCUv2M7SkBLykH56T++Xs+8ln9zTGbOvNGIe02/jw==
   dependencies:
     "@sinonjs/commons" "^1.7.0"
-
-"@stablelib/base64@^1.0.1":
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/@stablelib/base64/-/base64-1.0.1.tgz#bdfc1c6d3a62d7a3b7bbc65b6cce1bb4561641be"
-  integrity sha512-1bnPQqSxSuc3Ii6MhBysoWCg58j97aUjuCSZrGSmDxNqtytIi0k8utUenAwTZN4V5mXXYGsVUI9zeBqy+jBOSQ==
-
-"@stablelib/hex@^1.0.1":
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/@stablelib/hex/-/hex-1.0.1.tgz#564bd46d896941c93131d1e1869eabc17cf9bab5"
-  integrity sha512-PQOEChVBjhYGgAD+ehO2ow1gSj1slre3jW4oMD4kV8VrhYhzmtsQDWDZej3BQO8qkVezdczDvISxVSF24PuYNA==
 
 "@swc/cli@^0.1.57":
   version "0.1.57"
@@ -4772,6 +4754,11 @@ load-json-file@^4.0.0:
     parse-json "^4.0.0"
     pify "^3.0.0"
     strip-bom "^3.0.0"
+
+local-state-sync@^1.0.0-beta.2:
+  version "1.0.0-beta.2"
+  resolved "https://registry.yarnpkg.com/local-state-sync/-/local-state-sync-1.0.0-beta.2.tgz#baf7fa6379ba0192074a581e696813da885fac9d"
+  integrity sha512-jyeDkD9BBkKNcA4DACjMkBHYGcQM3DHugqE3JsspKKjVNfLbi1Vn9P+oXuAJK6iyb+T/oynQdUPBB57ZitsY5w==
 
 locate-path@^3.0.0:
   version "3.0.0"

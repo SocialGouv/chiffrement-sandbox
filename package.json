@@ -23,7 +23,6 @@
     "db:migrations": "zx ./scripts/migrations.mjs"
   },
   "dependencies": {
-    "@47ng/codec": "^1.1.0",
     "@chakra-ui/react": "^2.3.6",
     "@emotion/react": "^11.10.4",
     "@emotion/styled": "^11.10.4",
@@ -36,6 +35,7 @@
     "fastify-plugin": "^4.3.0",
     "framer-motion": "^7.6.1",
     "libsodium-wrappers": "^0.7.10",
+    "local-state-sync": "^1.0.0-beta.2",
     "mitata": "^0.1.6",
     "next": "^12.3.1",
     "next-usequerystate": "^1.7.2",

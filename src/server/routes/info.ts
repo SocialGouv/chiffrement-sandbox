@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { zodToJsonSchema } from 'zod-to-json-schema'
-import { App } from '../types'
+import type { App } from '../types'
 
 const infoResponseBody = z.object({
   release: z.string(),

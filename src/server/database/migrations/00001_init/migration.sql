@@ -33,7 +33,7 @@ CREATE INDEX e2esdk_keychain_items_payload_fingerprint_index  ON e2esdk_keychain
 
 --------------------------------------------------------------------------------
 
-CREATE TABLE e2esdk_key_shares (
+CREATE TABLE e2esdk_shared_keys (
   created_at                  TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   expires_at                  TIMESTAMP WITH TIME ZONE,
   to_user_id                  VARCHAR(128) NOT NULL REFERENCES e2esdk_identities(user_id),
@@ -50,7 +50,7 @@ CREATE TABLE e2esdk_key_shares (
   PRIMARY KEY (from_user_id, to_user_id, payload_fingerprint)
 );
 
-CREATE INDEX e2esdk_key_shares_from_user_id_index         ON e2esdk_key_shares (from_user_id);        -- Query outgoing messages
-CREATE INDEX e2esdk_key_shares_to_user_id_index           ON e2esdk_key_shares (to_user_id);          -- Query incoming messages
-CREATE INDEX e2esdk_key_shares_name_fingerprint_index     ON e2esdk_key_shares (name_fingerprint);    -- Query key graph (pending invites)
-CREATE INDEX e2esdk_key_shares_payload_fingerprint_index  ON e2esdk_key_shares (payload_fingerprint); -- Query key graph (pending invites)
+CREATE INDEX e2esdk_shared_keys_from_user_id_index         ON e2esdk_shared_keys (from_user_id);        -- Query outgoing messages
+CREATE INDEX e2esdk_shared_keys_to_user_id_index           ON e2esdk_shared_keys (to_user_id);          -- Query incoming messages
+CREATE INDEX e2esdk_shared_keys_name_fingerprint_index     ON e2esdk_shared_keys (name_fingerprint);    -- Query key graph (pending invites)
+CREATE INDEX e2esdk_shared_keys_payload_fingerprint_index  ON e2esdk_shared_keys (payload_fingerprint); -- Query key graph (pending invites)

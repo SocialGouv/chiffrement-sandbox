@@ -254,7 +254,7 @@ function decodePayload<Output>(
     return sodium.to_string(plaintext)
   }
   if (payloadType === PayloadType.json) {
-    return JSON.parse(sodium.to_string(plaintext)) as Output
+    return JSON.parse(sodium.to_string(plaintext).trim()) as Output
   }
   throw new Error(`Unknown payload type ${payloadType}`)
 }
