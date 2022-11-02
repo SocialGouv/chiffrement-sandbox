@@ -1,32 +1,40 @@
 import { zodToJsonSchema } from 'zod-to-json-schema'
 import {
-  PublicKeyAuthHeaders,
-  publicKeyAuthHeaders,
+  PublicRouteHeaders,
+  publicRouteHeaders
 } from '../../modules/api/headers.js'
 import {
   loginResponseBody,
-  LoginResponseBody,
+  LoginResponseBody
 } from '../../modules/api/login.js'
+import { isFarFromCurrentTime } from '../../modules/time.js'
 import { getOwnIdentity } from '../database/models/identity.js'
 import { App } from '../types'
 
 export default async function loginRoutes(app: App) {
   app.get<{
-    Headers: PublicKeyAuthHeaders
+    Headers: PublicRouteHeaders
     Reply: LoginResponseBody
   }>(
     '/login',
     {
-      preValidation: app.usePublicKeyAuth(),
       schema: {
-        headers: zodToJsonSchema(publicKeyAuthHeaders),
+        headers: zodToJsonSchema(publicRouteHeaders),
         response: {
           200: zodToJsonSchema(loginResponseBody),
         },
       },
     },
     async function login(req, res) {
-      const identity = await getOwnIdentity(app.db, req.identity.userId)
+      if (isFarFromCurrentTime(req.headers['x-e2esdk-timestamp'])) {
+        throw app.httpErrors.forbidden(
+          'Request timestamp is too far off current time'
+        )
+      }
+      const identity = await getOwnIdentity(
+        app.db,
+        req.headers['x-e2esdk-user-id']
+      )
       if (!identity) {
         throw app.httpErrors.notFound(
           `No identity found for user id ${req.identity.userId}`

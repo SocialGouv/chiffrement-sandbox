@@ -1,7 +1,9 @@
+import mitt, { Emitter } from 'mitt'
 import type {
   GetKeychainResponseBody,
   PostKeychainItemRequestBody,
 } from '../api/keychain.js'
+import { loginResponseBody } from '../api/login.js'
 import {
   GetSharedKeysResponseBody,
   PostSharedKeyBody,
@@ -98,6 +100,12 @@ type State = IdleState | LoadedState
 
 // --
 
+type Events = {
+  identityUpdated: PublicUserIdentity | null
+}
+
+// --
+
 type HTTPMethod = 'GET' | 'POST' | 'DELETE'
 
 // --
@@ -108,6 +116,7 @@ export class Client {
   public readonly sodium: Sodium
   public readonly config: Readonly<Config>
   #state: State
+  #mitt: Emitter<Events>
 
   constructor(sodium: Sodium, config: ClientConfig) {
     this.sodium = sodium
@@ -120,6 +129,17 @@ export class Client {
     this.#state = {
       state: 'idle',
     }
+    this.#mitt = mitt()
+  }
+
+  // Event Emitter --
+
+  public on<K extends keyof Events>(
+    event: K,
+    callback: (arg: Events[K]) => void
+  ) {
+    this.#mitt.on(event, callback)
+    return () => this.#mitt.off(event, callback)
   }
 
   // Auth --
@@ -166,6 +186,7 @@ export class Client {
     try {
       await this.apiCall('POST', '/signup', body)
       this.#state.messagePollingHandle = this.startMessagePolling()
+      this.#mitt.emit('identityUpdated', this.publicIdentity)
       return this.publicIdentity
     } catch (error) {
       this.logout() // Cleanup on failure
@@ -176,28 +197,15 @@ export class Client {
   public async login(userId: string, personalKey: Uint8Array) {
     await this.sodium.ready
     const res = await fetch(`${this.config.serverURL}/login`, {
-      method: 'POST',
       headers: {
         'content-type': 'application/json',
+        'x-e2esdk-user-id': userId,
+        'x-e2esdk-timestamp': new Date().toISOString(),
       },
-      body: JSON.stringify({
-        userId,
-      }),
     })
     // todo: Error handling
-    // todo: Use a parser
-    type ResponseBody = {
-      userId: string
-      signaturePublicKey: string
-      sharingPublicKey: string
-      signaturePrivateKey: string
-      sharingPrivateKey: string
-    }
-    const responseBody = await this.verifyServerResponse<ResponseBody>(
-      'POST',
-      res,
-      { userId }
-    )
+    // todo: Verify server response AFTER parsing body (requires refactor)
+    const responseBody = loginResponseBody.parse(await res.json())
     const withPersonalKey: SecretBoxCipher = {
       algorithm: 'secretBox',
       key: personalKey,
@@ -251,6 +259,7 @@ export class Client {
     // Load keychain & incoming shared keys in the background
     this.loadKeychain().catch(console.error)
     this.processIncomingSharedKeys().catch(console.error)
+    this.#mitt.emit('identityUpdated', this.publicIdentity)
     return this.publicIdentity
   }
 
@@ -747,6 +756,7 @@ export class Client {
     this.#state = {
       state: 'idle',
     }
+    this.#mitt.emit('identityUpdated', null)
   }
 
   // private serializeState() {

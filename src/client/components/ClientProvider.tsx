@@ -1,5 +1,5 @@
 import React from 'react'
-import { Client } from '../../modules/crypto/client.js'
+import { Client, PublicUserIdentity } from '../../modules/crypto/client.js'
 import { sodium } from '../../modules/crypto/sodium.js'
 
 const client = new Client(sodium, {
@@ -19,4 +19,23 @@ export const ClientProvider: React.FC<ClientProviderProps> = props => (
 
 export function useClient() {
   return React.useContext(ClientContext)
+}
+
+// --
+
+export function useClientIdentity() {
+  const client = useClient()
+  const [identity, setIdentity] = React.useState<PublicUserIdentity | null>(
+    () => {
+      try {
+        return client.publicIdentity
+      } catch {
+        return null
+      }
+    }
+  )
+  React.useEffect(() => {
+    return client.on('identityUpdated', identity => setIdentity(identity))
+  }, [client])
+  return identity
 }

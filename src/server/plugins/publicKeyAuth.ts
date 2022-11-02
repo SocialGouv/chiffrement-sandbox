@@ -68,6 +68,7 @@ const publicKeyAuthPlugin: FastifyPluginAsync = async (app: App) => {
         if (identity.userId !== userId) {
           throw app.httpErrors.badRequest('Invalid user ID')
         }
+
         try {
           if (
             !verifyClientSignature(
@@ -90,6 +91,7 @@ const publicKeyAuthPlugin: FastifyPluginAsync = async (app: App) => {
         } catch {
           throw app.httpErrors.unauthorized('Invalid request signature')
         }
+
         req.identity = identity
       }
   )
