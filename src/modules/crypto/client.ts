@@ -275,7 +275,7 @@ export class Client {
     createdAt = new Date(),
     expiresAt = null,
     sharedBy = null,
-  }: Optional<KeychainItem, 'createdAt'>) {
+  }: Optional<KeychainItem, 'createdAt' | 'expiresAt' | 'sharedBy'>) {
     await this.sodium.ready
     if (this.#state.state !== 'loaded') {
       throw new Error('Account is locked')
@@ -501,11 +501,13 @@ export class Client {
           encodedCiphertextFormatV1
         ),
         cipher: cipherParser.parse(
-          decrypt(
-            this.sodium,
-            lockedItem.payload,
-            withPersonalKey,
-            encodedCiphertextFormatV1
+          JSON.parse(
+            decrypt(
+              this.sodium,
+              lockedItem.payload,
+              withPersonalKey,
+              encodedCiphertextFormatV1
+            ).trim()
           )
         ),
         createdAt: new Date(lockedItem.createdAt),
@@ -565,11 +567,13 @@ export class Client {
             encodedCiphertextFormatV1
           ),
           cipher: cipherParser.parse(
-            decrypt(
-              this.sodium,
-              sharedKey.payload,
-              withSharedSecret,
-              encodedCiphertextFormatV1
+            JSON.parse(
+              decrypt(
+                this.sodium,
+                sharedKey.payload,
+                withSharedSecret,
+                encodedCiphertextFormatV1
+              ).trim()
             )
           ),
           createdAt: new Date(sharedKey.createdAt),
