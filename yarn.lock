@@ -4755,10 +4755,10 @@ load-json-file@^4.0.0:
     pify "^3.0.0"
     strip-bom "^3.0.0"
 
-local-state-sync@^1.0.0-beta.2:
-  version "1.0.0-beta.2"
-  resolved "https://registry.yarnpkg.com/local-state-sync/-/local-state-sync-1.0.0-beta.2.tgz#baf7fa6379ba0192074a581e696813da885fac9d"
-  integrity sha512-jyeDkD9BBkKNcA4DACjMkBHYGcQM3DHugqE3JsspKKjVNfLbi1Vn9P+oXuAJK6iyb+T/oynQdUPBB57ZitsY5w==
+local-state-sync@^1.0.0-beta.4:
+  version "1.0.0-beta.4"
+  resolved "https://registry.yarnpkg.com/local-state-sync/-/local-state-sync-1.0.0-beta.4.tgz#80ae766beb5c6d5deb15bf4756d08227f7bb12da"
+  integrity sha512-CEsCVafdcz71ZVBH4hRJO32iF1WeoVBY/t8229ERWXSYi+NHHLcAPrmH9ryubykFDj39qx0aTOvK14g6whaT5g==
 
 locate-path@^3.0.0:
   version "3.0.0"

@@ -39,3 +39,12 @@ export function useClientIdentity() {
   }, [client])
   return identity
 }
+
+export function useClientKeys() {
+  const client = useClient()
+  const [keys, setKeys] = React.useState(() => client.keys)
+  React.useEffect(() => {
+    return client.on('keychainUpdated', () => setKeys(client.keys))
+  }, [client])
+  return keys
+}

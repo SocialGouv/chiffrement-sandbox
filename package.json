@@ -35,7 +35,7 @@
     "fastify-plugin": "^4.3.0",
     "framer-motion": "^7.6.1",
     "libsodium-wrappers": "^0.7.10",
-    "local-state-sync": "^1.0.0-beta.2",
+    "local-state-sync": "^1.0.0-beta.4",
     "mitata": "^0.1.6",
     "mitt": "^3.0.0",
     "next": "^12.3.1",

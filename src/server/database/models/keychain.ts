@@ -1,5 +1,6 @@
 import type { Sql } from 'postgres'
 import { z } from 'zod'
+import { getFirst } from './helpers.js'
 
 export const TABLE_NAME = 'e2esdk_keychain_items'
 
@@ -30,4 +31,26 @@ export function getOwnKeychainItems(
     FROM ${sql(TABLE_NAME)}
     WHERE ${sql('ownerId')} = ${userId}
   `
+}
+
+export async function getKeychainItem(
+  sql: Sql,
+  {
+    ownerId,
+    nameFingerprint,
+    payloadFingerprint,
+  }: Pick<
+    KeychainItemSchema,
+    'ownerId' | 'nameFingerprint' | 'payloadFingerprint'
+  >
+) {
+  const results: KeychainItemSchema[] = await sql`
+    SELECT *
+    FROM ${sql(TABLE_NAME)}
+    WHERE ${sql('ownerId')} = ${ownerId}
+    -- Keep payloadFingerprint first for index performance
+    AND ${sql('payloadFingerprint')} = ${payloadFingerprint}
+    AND ${sql('nameFingerprint')} = ${nameFingerprint}
+  `
+  return getFirst(results)
 }

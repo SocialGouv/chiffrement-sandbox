@@ -1,9 +1,18 @@
 import { z } from 'zod'
 import { zodToJsonSchema } from 'zod-to-json-schema'
 import {
+  publicKeyAuthHeaders,
+  PublicKeyAuthHeaders,
+} from '../../modules/api/headers.js'
+import {
+  getMultipleIdentitiesResponseBody,
+  GetMultipleIdentitiesResponseBody,
+  getSingleIdentityResponseBody,
+  GetSingleIdentityResponseBody,
+} from '../../modules/api/identity.js'
+import {
   getPublicIdentities,
   getPublicIdentity,
-  identitySchema,
 } from '../database/models/identity.js'
 import type { App } from '../types.js'
 
@@ -15,24 +24,20 @@ const userIdsParams = z.object({
   userIds: z.string(),
 })
 
-const singleIdentityResponseBody = identitySchema.pick({
-  userId: true,
-  sharingPublicKey: true,
-  signaturePublicKey: true,
-})
-
-const multipleIdentitiesResponseBody = z.array(singleIdentityResponseBody)
-
 export default async function identitiesRoutes(app: App) {
   app.get<{
     Params: z.TypeOf<typeof userIdParams>
-    Reply: z.TypeOf<typeof singleIdentityResponseBody>
+    Headers: PublicKeyAuthHeaders
+    Reply: GetSingleIdentityResponseBody
   }>(
     '/identity/:userId',
     {
+      preValidation: app.usePublicKeyAuth(),
       schema: {
+        params: zodToJsonSchema(userIdParams),
+        headers: zodToJsonSchema(publicKeyAuthHeaders),
         response: {
-          200: zodToJsonSchema(singleIdentityResponseBody),
+          200: zodToJsonSchema(getSingleIdentityResponseBody),
         },
       },
     },
@@ -48,14 +53,16 @@ export default async function identitiesRoutes(app: App) {
   )
   app.get<{
     Params: z.TypeOf<typeof userIdsParams>
-    Reply: z.TypeOf<typeof multipleIdentitiesResponseBody>
+    Reply: GetMultipleIdentitiesResponseBody
   }>(
     '/identities/:userIds',
     {
+      preValidation: app.usePublicKeyAuth(),
       schema: {
         params: zodToJsonSchema(userIdsParams),
+        headers: zodToJsonSchema(publicKeyAuthHeaders),
         response: {
-          200: zodToJsonSchema(multipleIdentitiesResponseBody),
+          200: zodToJsonSchema(getMultipleIdentitiesResponseBody),
         },
       },
     },

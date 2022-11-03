@@ -12,10 +12,13 @@ import {
 } from '@chakra-ui/react'
 import { ColorModeSwitch } from 'client/components/colorModeSwitch'
 import { SodiumState } from 'client/components/sodiumState'
+import NextLink from 'next/link'
+import { useRouter } from 'next/router'
 import React from 'react'
 import { FiLock, FiLogOut, FiPenTool, FiUser } from 'react-icons/fi'
 import { TbSalt } from 'react-icons/tb'
 import { useClient, useClientIdentity } from './ClientProvider'
+import { NoSSR } from './NoSSR'
 
 type PageLayoutProps = FlexProps & {
   children: React.ReactNode
@@ -27,6 +30,7 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
 }) => {
   const client = useClient()
   const identity = useClientIdentity()
+  const router = useRouter()
   return (
     <>
       <Flex py={2} px={4} gap={2} alignItems="center" {...props}>
@@ -45,37 +49,50 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
             aria-label="User settings"
           />
           <MenuList>
-            {identity ? (
-              <>
-                <MenuItem icon={<FiUser />}>
-                  <Text as="span" fontFamily="mono" fontSize="xs">
-                    {identity.userId}
-                  </Text>
-                </MenuItem>
-                <MenuItem icon={<FiLock />}>
-                  <Text as="span" fontFamily="mono" fontSize="xs">
-                    {client.encode(identity.sharingPublicKey)}
-                  </Text>
-                </MenuItem>
-                <MenuItem icon={<FiPenTool />}>
-                  <Text as="span" fontFamily="mono" fontSize="xs">
-                    {client.encode(identity.signaturePublicKey)}
-                  </Text>
-                </MenuItem>
-                <MenuItem
-                  icon={<FiLogOut />}
-                  color="red.500"
-                  onClick={() => client.logout()}
-                >
-                  Log out
-                </MenuItem>
-              </>
-            ) : (
-              <>
-                <MenuItem>Log in</MenuItem>
-                <MenuItem>Sign up</MenuItem>
-              </>
-            )}
+            <NoSSR>
+              {identity ? (
+                <>
+                  <MenuItem icon={<FiUser />}>
+                    <Text as="span" fontFamily="mono" fontSize="xs">
+                      {identity.userId}
+                    </Text>
+                  </MenuItem>
+                  <MenuItem icon={<FiLock />}>
+                    <Text as="span" fontFamily="mono" fontSize="xs">
+                      {client.encode(identity.sharingPublicKey)}
+                    </Text>
+                  </MenuItem>
+                  <MenuItem icon={<FiPenTool />}>
+                    <Text as="span" fontFamily="mono" fontSize="xs">
+                      {client.encode(identity.signaturePublicKey)}
+                    </Text>
+                  </MenuItem>
+                  <MenuItem
+                    icon={<FiLogOut />}
+                    color="red.500"
+                    onClick={() => {
+                      client.logout()
+                      router.push('/login')
+                    }}
+                  >
+                    Log out
+                  </MenuItem>
+                </>
+              ) : (
+                <>
+                  <NextLink href="/login" passHref>
+                    <MenuItem as="a" display="block">
+                      Log in
+                    </MenuItem>
+                  </NextLink>
+                  <NextLink href="/signup" passHref>
+                    <MenuItem as="a" display="block">
+                      Sign up
+                    </MenuItem>
+                  </NextLink>
+                </>
+              )}
+            </NoSSR>
           </MenuList>
         </Menu>
       </Flex>

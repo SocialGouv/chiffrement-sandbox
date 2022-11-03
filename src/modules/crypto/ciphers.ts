@@ -1,5 +1,6 @@
 import { z } from 'zod'
-import { sodium, Sodium } from './sodium.js'
+import { base64UrlDecode, base64UrlEncode } from './codec.js'
+import { Sodium } from './sodium.js'
 import { randomPad } from './utils.js'
 
 export type BoxCipher<DataType = Uint8Array> = {
@@ -72,13 +73,13 @@ export function generateSecretBoxCipher(
  * @warning This will not encrypt the keys, they will only be base64 encoded as-is.
  * This should only be used to feed to the `encrypt` function.
  */
-export function _serializeCipher(sodium: Sodium, cipher: Cipher) {
+export function _serializeCipher(cipher: Cipher) {
   if (cipher.algorithm === 'box') {
     // todo: Does this make sense?
     const payload: Omit<BoxCipher<string>, 'nonce'> = {
       algorithm: cipher.algorithm,
-      publicKey: sodium.to_base64(cipher.publicKey),
-      privateKey: sodium.to_base64(cipher.privateKey),
+      publicKey: base64UrlEncode(cipher.publicKey),
+      privateKey: base64UrlEncode(cipher.privateKey),
     }
     return randomPad(JSON.stringify(payload), 150)
   }
@@ -88,15 +89,15 @@ export function _serializeCipher(sodium: Sodium, cipher: Cipher) {
     }
     const payload: SealedBoxCipher<string> = {
       algorithm: cipher.algorithm,
-      publicKey: sodium.to_base64(cipher.publicKey),
-      privateKey: sodium.to_base64(cipher.privateKey),
+      publicKey: base64UrlEncode(cipher.publicKey),
+      privateKey: base64UrlEncode(cipher.privateKey),
     }
     return randomPad(JSON.stringify(payload), 150)
   }
   if (cipher.algorithm === 'secretBox') {
     const payload: Omit<SecretBoxCipher<string>, 'nonce'> = {
       algorithm: cipher.algorithm,
-      key: sodium.to_base64(cipher.key),
+      key: base64UrlEncode(cipher.key),
     }
     return randomPad(JSON.stringify(payload), 150)
   }
@@ -108,7 +109,7 @@ export function _serializeCipher(sodium: Sodium, cipher: Cipher) {
 const thirtyTwoBytesInBase64Parser = z
   .string()
   .regex(/^[\w-]{43}$/)
-  .transform(value => sodium.from_base64(value))
+  .transform(base64UrlDecode)
 
 const boxCipherParser = z.object({
   algorithm: z.literal('box'),
@@ -153,15 +154,18 @@ export function memzeroCipher(sodium: Sodium, cipher: Cipher) {
     if (cipher.nonce) {
       sodium.memzero(cipher.nonce)
     }
+    return
   }
   if (cipher.algorithm === 'sealedBox' && cipher.privateKey) {
     sodium.memzero(cipher.privateKey)
+    return
   }
   if (cipher.algorithm === 'secretBox') {
     sodium.memzero(cipher.key)
     if (cipher.nonce) {
       sodium.memzero(cipher.nonce)
     }
+    return
   }
   throw new Error('Unsupported cipher algorithm')
 }

@@ -7,6 +7,7 @@ import {
   Input,
   Select,
   Stack,
+  useToast,
 } from '@chakra-ui/react'
 import { useClient } from 'client/components/ClientProvider'
 import {
@@ -25,6 +26,7 @@ const NewKeyPage: NextPage = () => {
   const client = useClient()
   const [name, setName] = React.useState('')
   const [type, setType] = React.useState<KeyTypes>(KeyTypes.secretBox)
+  const toast = useToast({ position: 'bottom-right' })
   const createKey = React.useCallback(async () => {
     const cipher =
       type === KeyTypes.secretBox
@@ -35,7 +37,12 @@ const NewKeyPage: NextPage = () => {
       name,
       cipher,
     })
-  }, [client, name, type])
+    setName('')
+    toast({
+      title: 'Key created',
+      description: 'It has been saved in your keychain',
+    })
+  }, [client, name, type, toast])
 
   return (
     <>

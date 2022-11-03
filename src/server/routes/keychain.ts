@@ -71,7 +71,7 @@ export default async function keychainRoutes(app: App) {
 
       if (!req.body.sharedBy) {
         await storeKeychainItem(app.db, req.body)
-        return res.status(201)
+        return res.status(201).send()
       }
 
       const sharedKey = await findSharedKey(
@@ -80,12 +80,14 @@ export default async function keychainRoutes(app: App) {
         req.identity.userId,
         req.body.payloadFingerprint
       )
+      if (!sharedKey) {
+        forbidden('Could not find associated shared key')
+      }
       if (
-        !sharedKey ||
         sharedKey.fromUserId !== req.body.sharedBy ||
         sharedKey.toUserId !== req.identity.userId
       ) {
-        forbidden('Could not find associated shared key')
+        forbidden('Mismatch in shared key', sharedKey)
       }
       for (const fieldToMatch of [
         'createdAt',
@@ -111,7 +113,7 @@ export default async function keychainRoutes(app: App) {
           )
         }
       )
-      return res.status(201)
+      return res.status(201).send()
     }
   )
 

@@ -248,10 +248,20 @@ async function resetDatabase() {
       )}:`
     )
   )
+  // https://stackoverflow.com/a/2611745
   const tables = await sql`
-    SELECT relname as table_name, n_live_tup as row_count
-    FROM pg_stat_user_tables
-    ORDER BY n_live_tup DESC
+    WITH tbl AS (
+      SELECT table_schema, TABLE_NAME
+      FROM information_schema.tables
+      WHERE TABLE_NAME not like 'pg_%'
+      AND table_schema in ('public')
+    )
+    SELECT
+      table_schema,
+      TABLE_NAME,
+      (xpath('/row/c/text()', query_to_xml(format('select count(*) as c from %I.%I', table_schema, TABLE_NAME), FALSE, TRUE, '')))[1]::text::int AS row_count
+    FROM tbl
+    ORDER BY row_count DESC
   `
   if (tables.length === 0) {
     console.info('Database is empty')

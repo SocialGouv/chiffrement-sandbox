@@ -9,6 +9,7 @@ import {
   postSharedKeyBody,
   PostSharedKeyBody,
 } from '../../modules/api/sharedKey.js'
+import { getKeychainItem } from '../database/models/keychain.js'
 import {
   getKeysSharedByMe,
   getKeysSharedWithMe,
@@ -35,8 +36,20 @@ export default async function sharedKeysRoutes(app: App) {
       },
     },
     async function postSharedKey(req, res) {
+      // First, check if the recipient doesn't
+      // already have this key in their keychain
+      const existingKeychainEntry = await getKeychainItem(app.db, {
+        ownerId: req.body.toUserId,
+        nameFingerprint: req.body.nameFingerprint,
+        payloadFingerprint: req.body.payloadFingerprint,
+      })
+      if (existingKeychainEntry) {
+        throw app.httpErrors.conflict(
+          'The recipient already has a copy of this key'
+        )
+      }
       await storeSharedKey(app.db, req.body)
-      return res.status(201)
+      return res.status(201).send()
     }
   )
 
