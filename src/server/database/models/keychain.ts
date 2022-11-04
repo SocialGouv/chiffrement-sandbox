@@ -5,6 +5,7 @@ import { getFirst } from './helpers.js'
 export const TABLE_NAME = 'e2esdk_keychain_items'
 
 export const keychainItemSchema = z.object({
+  addedAt: z.string(),
   createdAt: z.string(),
   expiresAt: z.string().nullable(),
   name: z.string(),
@@ -18,7 +19,10 @@ export const keychainItemSchema = z.object({
 
 export type KeychainItemSchema = z.TypeOf<typeof keychainItemSchema>
 
-export function storeKeychainItem(sql: Sql, item: KeychainItemSchema) {
+export function storeKeychainItem(
+  sql: Sql,
+  item: Omit<KeychainItemSchema, 'addedAt'>
+) {
   return sql`INSERT INTO ${sql(TABLE_NAME)} ${sql(item)}`
 }
 
@@ -48,7 +52,7 @@ export async function getKeychainItem(
     SELECT *
     FROM ${sql(TABLE_NAME)}
     WHERE ${sql('ownerId')} = ${ownerId}
-    -- Keep payloadFingerprint first for index performance
+    -- Keep payloadFingerprint first for (theoretical) index performance
     AND ${sql('payloadFingerprint')} = ${payloadFingerprint}
     AND ${sql('nameFingerprint')} = ${nameFingerprint}
   `

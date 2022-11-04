@@ -6,6 +6,7 @@ import { getFirst } from './helpers.js'
 export const TABLE_NAME = 'e2esdk_shared_keys'
 
 export const sharedKeySchema = z.object({
+  sharedAt: z.string(),
   createdAt: z.string(),
   expiresAt: z.string().nullable(),
   toUserId: z.string(),
@@ -21,7 +22,10 @@ export const sharedKeySchema = z.object({
 
 export type SharedKeySchema = z.TypeOf<typeof sharedKeySchema>
 
-export function storeSharedKey(sql: Sql, sharedKey: SharedKeySchema) {
+export function storeSharedKey(
+  sql: Sql,
+  sharedKey: Omit<SharedKeySchema, 'sharedAt'>
+) {
   return sql`INSERT INTO ${sql(TABLE_NAME)} ${sql(sharedKey)}`
 }
 
@@ -50,6 +54,7 @@ export function getKeysSharedWithMe(
     SELECT *
     FROM ${sql(TABLE_NAME)}
     WHERE ${sql('toUserId')} = ${userId}
+    ORDER BY ${sql('sharedAt')} ASC
   `
 }
 

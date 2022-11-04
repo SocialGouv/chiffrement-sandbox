@@ -10,7 +10,8 @@ CREATE TABLE e2esdk_identities (
 --------------------------------------------------------------------------------
 
 CREATE TABLE e2esdk_keychain_items (
-  created_at                  TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  added_at                    TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  created_at                  TIMESTAMP WITH TIME ZONE NOT NULL,
   expires_at                  TIMESTAMP WITH TIME ZONE,
   name                        TEXT UNIQUE NOT NULL, -- encrypted
   payload                     TEXT UNIQUE NOT NULL, -- encrypted
@@ -34,7 +35,8 @@ CREATE INDEX e2esdk_keychain_items_payload_fingerprint_index  ON e2esdk_keychain
 --------------------------------------------------------------------------------
 
 CREATE TABLE e2esdk_shared_keys (
-  created_at                  TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  shared_at                   TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  created_at                  TIMESTAMP WITH TIME ZONE NOT NULL,
   expires_at                  TIMESTAMP WITH TIME ZONE,
   to_user_id                  VARCHAR(128) NOT NULL REFERENCES e2esdk_identities(user_id),
   from_user_id                VARCHAR(128) NOT NULL REFERENCES e2esdk_identities(user_id),
