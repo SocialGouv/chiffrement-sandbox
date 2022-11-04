@@ -23,7 +23,6 @@ import {
 } from './auth.js'
 import {
   BoxCipher,
-  Cipher,
   cipherParser,
   generateBoxCipher,
   memzeroCipher,
@@ -31,7 +30,12 @@ import {
   _serializeCipher,
 } from './ciphers.js'
 import { base64UrlDecode, base64UrlEncode } from './codec.js'
-import { decrypt, encodedCiphertextFormatV1, encrypt } from './encryption.js'
+import {
+  decrypt,
+  encodedCiphertextFormatV1,
+  encrypt,
+  EncryptableJSONDataType,
+} from './encryption.js'
 import { fingerprint } from './hash.js'
 import {
   generateSignatureKeyPair,
@@ -53,25 +57,20 @@ type Config = Omit<ClientConfig<Key>, 'pollingInterval'> &
 
 // --
 
-const keyParser = z.string().transform(base64UrlDecode)
+const keySchema = z.string().transform(base64UrlDecode)
 
 type Key = Uint8Array
 
 // --
 
-const keyPairParser = z.object({
-  publicKey: keyParser,
-  privateKey: keyParser,
+const keyPairSchema = z.object({
+  publicKey: keySchema,
+  privateKey: keySchema,
 })
-
-type KeyPair = {
-  publicKey: Key
-  privateKey: Key
-}
 
 // --
 
-const keychainItemParser = z.object({
+const keychainItemSchema = z.object({
   name: z.string(),
   cipher: z
     .string()
@@ -84,38 +83,33 @@ const keychainItemParser = z.object({
   sharedBy: z.string().nullable(),
 })
 
-type KeychainItem = {
-  name: string
-  cipher: Cipher
-  createdAt: Date
-  expiresAt: Date | null
-  sharedBy: string | null
-}
+type KeychainItem = z.infer<typeof keychainItemSchema>
 
 // --
 
-const keychainParser = z
-  .array(keychainItemParser)
-  .transform(array => new Map(array.map(item => [item.name, item])))
-
-type Keychain = Map<string, KeychainItem>
+const keychainSchema = z.array(keychainItemSchema).transform(array =>
+  array.reduce((map, item) => {
+    map.set(
+      item.name,
+      [...(map.get(item.name) ?? []), item].sort(byCreatedAtMostRecentFirst)
+    )
+    return map
+  }, new Map<string, KeychainItem[]>())
+)
 
 // --
 
-const identityParser = z.object({
+const identitySchema = z.object({
   userId: z.string(),
-  sharing: keyPairParser,
-  signature: keyPairParser,
+  sharing: keyPairSchema,
+  signature: keyPairSchema,
 })
 
-type Identity = {
-  userId: string
-  signature: KeyPair
-  sharing: KeyPair
-}
+type Identity = z.infer<typeof identitySchema>
 
 type PartialIdentity = Optional<Identity, 'sharing' | 'signature'>
 
+// todo: Move to common type defs (also used by server)
 export type PublicUserIdentity<KeyType = Key> = {
   userId: string
   signaturePublicKey: KeyType
@@ -124,29 +118,20 @@ export type PublicUserIdentity<KeyType = Key> = {
 
 // --
 
-const idleStateParser = z.object({
+const idleStateSchema = z.object({
   state: z.literal('idle'),
 })
 
-type IdleState = {
-  state: 'idle'
-}
-
-const loadedStateParser = z.object({
+const loadedStateSchema = z.object({
   state: z.literal('loaded'),
-  identity: identityParser,
-  personalKey: keyParser,
-  keychain: keychainParser,
+  identity: identitySchema,
+  personalKey: keySchema,
+  keychain: keychainSchema,
 })
 
-type LoadedState = {
-  state: 'loaded'
-  identity: Identity
-  personalKey: Key
-  keychain: Keychain
-}
+const stateSchema = z.union([idleStateSchema, loadedStateSchema])
 
-type State = IdleState | LoadedState
+type State = z.infer<typeof stateSchema>
 
 // --
 
@@ -375,7 +360,7 @@ export class Client {
     if (this.#state.keychain.has(name)) {
       // Make sure the cipher algorithm remains the same,
       // but the key itself is different, for rotations.
-      const existingKey = this.#state.keychain.get(name)!
+      const [existingKey] = this.#state.keychain.get(name)!
       if (cipher.algorithm !== existingKey.cipher.algorithm) {
         throw new Error(`Cannot rotate key ${name} with different algorithm`)
       }
@@ -424,22 +409,21 @@ export class Client {
     }
     await this.apiCall('POST', '/keychain', body)
     // todo: Handle API errors
-    this.#state.keychain.set(name, {
+    this.#state.keychain.set(
       name,
-      cipher,
-      createdAt,
-      expiresAt,
-      sharedBy,
-    })
+      [
+        ...(this.#state.keychain.get(name) ?? []),
+        {
+          name,
+          cipher,
+          createdAt,
+          expiresAt,
+          sharedBy,
+        },
+      ].sort(byCreatedAtMostRecentFirst)
+    )
     this.#mitt.emit('keychainUpdated', null)
     this.#sync.setState(this.#state)
-  }
-
-  public getKeyByName(name: string) {
-    if (this.#state.state !== 'loaded') {
-      throw new Error('Account must be unlocked before accessing keys')
-    }
-    return this.#state.keychain.get(name)?.cipher
   }
 
   public get keys() {
@@ -447,10 +431,13 @@ export class Client {
       return []
     }
     return Array.from(this.#state.keychain.values())
+      .flat()
+      .sort(byCreatedAtMostRecentFirst)
   }
 
   // Sharing --
 
+  // todo: Share key by name (always share the current one)
   public async shareKey(
     {
       cipher,
@@ -562,6 +549,53 @@ export class Client {
     }
   }
 
+  // Encryption / Decryption --
+
+  public encrypt<DataType extends EncryptableJSONDataType | Uint8Array>(
+    input: DataType,
+    keyName: string
+  ) {
+    if (this.#state.state !== 'loaded') {
+      throw new Error('Account is locked: cannot encrypt')
+    }
+    const currentKey = this.#state.keychain.get(keyName)?.[0]
+    if (!currentKey) {
+      throw new Error(`No key found with name ${keyName}`)
+    }
+    if ((currentKey.expiresAt?.valueOf() ?? Infinity) < Date.now()) {
+      throw new Error(`Key ${keyName} has expired`)
+    }
+    return encrypt(
+      this.sodium,
+      input,
+      currentKey.cipher,
+      'application/e2esdk.ciphertext.v1'
+    )
+  }
+
+  public decrypt<Output>(ciphertext: string, keyName: string) {
+    if (this.#state.state !== 'loaded') {
+      throw new Error('Account is locked: cannot decrypt')
+    }
+    const keys = this.#state.keychain.get(keyName) ?? []
+    if (keys.length === 0) {
+      throw new Error(`No key found with name ${keyName}`)
+    }
+    for (const key of keys) {
+      try {
+        return decrypt<Output>(
+          this.sodium,
+          ciphertext,
+          key.cipher,
+          'application/e2esdk.ciphertext.v1'
+        )
+      } catch {
+        continue
+      }
+    }
+    throw new Error('Failed to decrypt: exhausted all available keys')
+  }
+
   // Helpers --
   // We're not using the sodium conversions because those need it
   // to be ready, and we want to be able to encode/decode at any time.
@@ -626,7 +660,12 @@ export class Client {
         expiresAt: lockedItem.expiresAt ? new Date(lockedItem.expiresAt) : null,
         sharedBy: lockedItem.sharedBy,
       }
-      this.#state.keychain.set(item.name, item)
+      this.#state.keychain.set(
+        item.name,
+        [...(this.#state.keychain.get(item.name) ?? []), item].sort(
+          byCreatedAtMostRecentFirst
+        )
+      )
       this.#mitt.emit('keychainUpdated', null)
       this.#sync.setState(this.#state)
     }
@@ -860,8 +899,8 @@ export class Client {
     this.sodium.memzero(this.#state.personalKey)
     this.sodium.memzero(this.#state.identity.sharing.privateKey)
     this.sodium.memzero(this.#state.identity.signature.privateKey)
-    this.#state.keychain.forEach(item =>
-      memzeroCipher(this.sodium, item.cipher)
+    this.#state.keychain.forEach(items =>
+      items.forEach(item => memzeroCipher(this.sodium, item.cipher))
     )
     this.#state.keychain.clear()
     this.#state = {
@@ -892,17 +931,18 @@ function stateSerializer(state: State) {
       },
     },
     personalKey: base64UrlEncode(state.personalKey),
-    keychain: Array.from(state.keychain.values()).map(item => ({
-      ...item,
-      cipher: _serializeCipher(item.cipher),
-    })),
+    keychain: Array.from(state.keychain.values())
+      .flat()
+      .map(item => ({
+        ...item,
+        cipher: _serializeCipher(item.cipher),
+      })),
   }
   return JSON.stringify(payload)
 }
 
 function stateParser(input: string): State {
-  const parser = z.union([idleStateParser, loadedStateParser])
-  const result = parser.safeParse(JSON.parse(input))
+  const result = stateSchema.safeParse(JSON.parse(input))
   if (!result.success) {
     console.error(result.error)
     throw new Error(result.error.message)
@@ -912,6 +952,12 @@ function stateParser(input: string): State {
     ...result.data,
   })
   return result.data
+}
+
+// --
+
+function byCreatedAtMostRecentFirst(a: KeychainItem, b: KeychainItem) {
+  return b.createdAt.valueOf() - a.createdAt.valueOf()
 }
 
 // --
