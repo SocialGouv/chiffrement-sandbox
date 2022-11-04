@@ -13,7 +13,7 @@ export type BoxCipher<DataType = Uint8Array> = {
 export type SealedBoxCipher<DataType = Uint8Array> = {
   algorithm: 'sealedBox'
   publicKey: DataType
-  privateKey?: DataType
+  privateKey: DataType
 }
 
 export type SecretBoxCipher<DataType = Uint8Array> = {
@@ -30,7 +30,7 @@ export function generateBoxCipher(
   sodium: Sodium,
   nonce?: Uint8Array
 ): BoxCipher {
-  // todo: These make little sense, box & sealedBox are supposed to be
+  // todo: This make little sense, box is supposed to be
   // DH over different identities.
   const keyPair = sodium.crypto_box_keypair()
   return {
@@ -42,8 +42,6 @@ export function generateBoxCipher(
 }
 
 export function generateSealedBoxCipher(sodium: Sodium): SealedBoxCipher {
-  // todo: These make little sense, box & sealedBox are supposed to be
-  // DH over different identities.
   const keyPair = sodium.crypto_box_keypair()
   return {
     algorithm: 'sealedBox',
@@ -84,9 +82,6 @@ export function _serializeCipher(cipher: Cipher) {
     return randomPad(JSON.stringify(payload), 150)
   }
   if (cipher.algorithm === 'sealedBox') {
-    if (!cipher.privateKey) {
-      throw new Error('Missing private key in sealedBox cipher')
-    }
     const payload: SealedBoxCipher<string> = {
       algorithm: cipher.algorithm,
       publicKey: base64UrlEncode(cipher.publicKey),
@@ -156,7 +151,7 @@ export function memzeroCipher(sodium: Sodium, cipher: Cipher) {
     }
     return
   }
-  if (cipher.algorithm === 'sealedBox' && cipher.privateKey) {
+  if (cipher.algorithm === 'sealedBox') {
     sodium.memzero(cipher.privateKey)
     return
   }

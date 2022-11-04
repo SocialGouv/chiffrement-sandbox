@@ -206,9 +206,6 @@ export function decrypt<Output = any>(
   }
 
   if (cipher.algorithm === 'sealedBox') {
-    if (!cipher.privateKey) {
-      throw new Error('Private key is required to open sealed boxes')
-    }
     const ciphertext = isUint8Array(payload)
       ? payload
       : sodium.from_base64(payload[3])
