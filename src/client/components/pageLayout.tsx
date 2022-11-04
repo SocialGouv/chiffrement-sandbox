@@ -1,5 +1,4 @@
 import {
-  Box,
   Container,
   Flex,
   FlexProps,
@@ -75,12 +74,7 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
                 router.asPath === '/new-key' ? 'underline' : undefined
               }
             >
-              <Box
-                as={FiPlusCircle}
-                display="inline-block"
-                mr={1}
-                transform="translateY(2px)"
-              />
+              <Icon as={FiPlusCircle} mr={1.5} transform="translateY(2px)" />
               New key
             </Link>
           </NextLink>
@@ -90,12 +84,7 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
                 router.asPath === '/share-key' ? 'underline' : undefined
               }
             >
-              <Box
-                as={FiShare2}
-                display="inline-block"
-                mr={1}
-                transform="translateY(2px)"
-              />
+              <Icon as={FiShare2} mr={1.5} transform="translateY(2px)" />
               Share key
             </Link>
           </NextLink>

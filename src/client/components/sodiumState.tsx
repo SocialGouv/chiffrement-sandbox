@@ -1,4 +1,4 @@
-import { Badge, BadgeProps, Box, useBoolean } from '@chakra-ui/react'
+import { Badge, BadgeProps, Icon, useBoolean } from '@chakra-ui/react'
 import React from 'react'
 import { FiCheckCircle, FiLoader } from 'react-icons/fi'
 import { ready } from '../../modules/crypto/sodium'
@@ -19,7 +19,7 @@ export const SodiumState: React.FC<BadgeProps> = props => {
       alignItems="center"
       {...props}
     >
-      <Box as={isReady ? FiCheckCircle : FiLoader} display="inline" mr={1} />
+      <Icon as={isReady ? FiCheckCircle : FiLoader} mr={1} />
       Sodium {isReady ? 'ready' : 'loading'}
     </Badge>
   )

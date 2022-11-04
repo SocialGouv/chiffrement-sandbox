@@ -7,7 +7,7 @@ import {
   Input,
   InputGroup,
   InputRightElement,
-  Stack
+  Stack,
 } from '@chakra-ui/react'
 import type { NextPage } from 'next'
 import { useRouter } from 'next/router'
@@ -23,7 +23,6 @@ const SignupPage: NextPage = () => {
   const router = useRouter()
   const signUp = React.useCallback(async () => {
     await client.signup(userId, client.decode(personalKey))
-    console.dir(client.publicIdentity)
     await router.push('/dashboard')
   }, [userId, personalKey, client, router])
 

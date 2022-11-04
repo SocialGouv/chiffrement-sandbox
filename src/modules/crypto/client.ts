@@ -185,11 +185,6 @@ export class Client {
       encryptionKey: 'HPJPr237wkeRQlbk3pC7tEugFLxGrvafTs6dvuXPWwY',
       namespace: 'e2esdk:sandbox',
       onStateUpdated: state => {
-        console.dir({
-          _: 'onStateUpdated',
-          incoming: state,
-          local: this.#state,
-        })
         if (state.state === 'idle') {
           this.clearState()
           return
@@ -211,6 +206,12 @@ export class Client {
       stateParser,
       stateSerializer,
     })
+    if (typeof window !== 'undefined') {
+      window.addEventListener(
+        'visibilitychange',
+        this._handleVisibilityChange.bind(this)
+      )
+    }
   }
 
   // Event Emitter --
@@ -917,6 +918,22 @@ export class Client {
     this.#mitt.emit('identityUpdated', null)
     this.#mitt.emit('keychainUpdated', null)
   }
+
+  private _handleVisibilityChange() {
+    if (this.#state.state !== 'loaded') {
+      return
+    }
+    if (typeof document === 'undefined') {
+      return
+    }
+    if (document.visibilityState === 'visible') {
+      this.startMessagePolling()
+    }
+    if (document.visibilityState === 'hidden') {
+      clearTimeout(this.#pollingHandle)
+      this.#pollingHandle = undefined
+    }
+  }
 }
 
 // --
@@ -955,10 +972,6 @@ function stateParser(input: string): State {
     console.error(result.error)
     throw new Error(result.error.message)
   }
-  console.dir({
-    _: 'stateParser',
-    ...result.data,
-  })
   return result.data
 }
 
