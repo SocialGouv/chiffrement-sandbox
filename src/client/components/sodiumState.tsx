@@ -10,18 +10,16 @@ export const SodiumState: React.FC<BadgeProps> = props => {
   }, [setReady])
   return (
     <Badge
+      h={5}
       colorScheme={isReady ? 'green' : 'orange'}
       textTransform="none"
       rounded="full"
       pr={2}
+      display="flex"
+      alignItems="center"
       {...props}
     >
-      <Box
-        as={isReady ? FiCheckCircle : FiLoader}
-        display="inline"
-        mr={1}
-        transform="translateY(1.5px)"
-      />
+      <Box as={isReady ? FiCheckCircle : FiLoader} display="inline" mr={1} />
       Sodium {isReady ? 'ready' : 'loading'}
     </Badge>
   )

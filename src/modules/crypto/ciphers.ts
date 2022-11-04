@@ -1,7 +1,6 @@
 import { z } from 'zod'
 import { base64UrlDecode, base64UrlEncode } from './codec.js'
 import { Sodium } from './sodium.js'
-import { randomPad } from './utils.js'
 
 export type BoxCipher<DataType = Uint8Array> = {
   algorithm: 'box'
@@ -63,10 +62,10 @@ export function generateSecretBoxCipher(
 
 // Serializer --
 
+export const CIPHER_MAX_PADDED_LENGTH = 150
+
 /**
- * @internal Exported for tests
- *
- * Stringify the given cipher, with padding to ensure constant output length.
+ * @internal Exported for tests - Stringify the given cipher
  *
  * @warning This will not encrypt the keys, they will only be base64 encoded as-is.
  * This should only be used to feed to the `encrypt` function.
@@ -79,7 +78,7 @@ export function _serializeCipher(cipher: Cipher) {
       publicKey: base64UrlEncode(cipher.publicKey),
       privateKey: base64UrlEncode(cipher.privateKey),
     }
-    return randomPad(JSON.stringify(payload), 150)
+    return JSON.stringify(payload)
   }
   if (cipher.algorithm === 'sealedBox') {
     const payload: SealedBoxCipher<string> = {
@@ -87,14 +86,14 @@ export function _serializeCipher(cipher: Cipher) {
       publicKey: base64UrlEncode(cipher.publicKey),
       privateKey: base64UrlEncode(cipher.privateKey),
     }
-    return randomPad(JSON.stringify(payload), 150)
+    return JSON.stringify(payload)
   }
   if (cipher.algorithm === 'secretBox') {
     const payload: Omit<SecretBoxCipher<string>, 'nonce'> = {
       algorithm: cipher.algorithm,
       key: base64UrlEncode(cipher.key),
     }
-    return randomPad(JSON.stringify(payload), 150)
+    return JSON.stringify(payload)
   }
   throw new Error('Unsupported cipher algorithm')
 }

@@ -24,6 +24,7 @@ import {
 import {
   BoxCipher,
   cipherParser,
+  CIPHER_MAX_PADDED_LENGTH,
   generateBoxCipher,
   memzeroCipher,
   SecretBoxCipher,
@@ -43,7 +44,11 @@ import {
   verifySignedHash,
 } from './signHash.js'
 import type { Sodium } from './sodium.js'
-import { checkEncryptionPublicKey, checkSignaturePublicKey } from './utils.js'
+import {
+  checkEncryptionPublicKey,
+  checkSignaturePublicKey,
+  randomPad,
+} from './utils.js'
 
 export type ClientConfig<KeyType = string> = {
   serverURL: string
@@ -97,6 +102,8 @@ const keychainSchema = z.array(keychainItemSchema).transform(array =>
   }, new Map<string, KeychainItem[]>())
 )
 
+type Keychain = z.infer<typeof keychainSchema>
+
 // --
 
 const identitySchema = z.object({
@@ -114,6 +121,12 @@ export type PublicUserIdentity<KeyType = Key> = {
   userId: string
   signaturePublicKey: KeyType
   sharingPublicKey: KeyType
+}
+
+// --
+
+type ShareKeyOptions = {
+  expiresAt?: Date
 }
 
 // --
@@ -372,7 +385,7 @@ export class Client {
     }
     const withPersonalKey = this.usePersonalKey()
     const nameFingerprint = fingerprint(this.sodium, name)
-    const payloadFingerprint = fingerprint(this.sodium, serializedCipher.trim())
+    const payloadFingerprint = fingerprint(this.sodium, serializedCipher)
     const createdAtISO = createdAt.toISOString()
     const expiresAtISO = expiresAt?.toISOString() ?? null
     const body: PostKeychainItemRequestBody = {
@@ -388,7 +401,7 @@ export class Client {
       ),
       payload: encrypt(
         this.sodium,
-        serializedCipher,
+        randomPad(serializedCipher, CIPHER_MAX_PADDED_LENGTH),
         withPersonalKey,
         encodedCiphertextFormatV1
       ),
@@ -409,23 +422,18 @@ export class Client {
     }
     await this.apiCall('POST', '/keychain', body)
     // todo: Handle API errors
-    this.#state.keychain.set(
+    addToKeychain(this.#state.keychain, {
       name,
-      [
-        ...(this.#state.keychain.get(name) ?? []),
-        {
-          name,
-          cipher,
-          createdAt,
-          expiresAt,
-          sharedBy,
-        },
-      ].sort(byCreatedAtMostRecentFirst)
-    )
+      cipher,
+      createdAt,
+      expiresAt,
+      sharedBy,
+    })
     this.#mitt.emit('keychainUpdated', null)
     this.#sync.setState(this.#state)
   }
 
+  // todo: Expose less data (names, number of keys, metadata, public keys, but not complete ciphers)
   public get keys() {
     if (this.#state.state !== 'loaded') {
       return []
@@ -437,31 +445,31 @@ export class Client {
 
   // Sharing --
 
-  // todo: Share key by name (always share the current one)
   public async shareKey(
-    {
-      cipher,
-      name,
-      expiresAt = null,
-      createdAt,
-    }: Omit<KeychainItem, 'sharedBy'>,
-    to: PublicUserIdentity
+    keyName: string,
+    to: PublicUserIdentity,
+    { expiresAt }: ShareKeyOptions = {}
   ) {
     await this.sodium.ready
     if (this.#state.state !== 'loaded') {
       throw new Error('Account must be unlocked before sending keys')
+    }
+    const keychainItem = this.#state.keychain.get(keyName)?.[0]
+    if (!keychainItem) {
+      throw new Error(`No available key to share with name ${keyName}`)
     }
     const sendTo: BoxCipher = {
       algorithm: 'box',
       privateKey: this.#state.identity.sharing.privateKey,
       publicKey: to.sharingPublicKey,
     }
-    const serializedCipher = _serializeCipher(cipher)
-    const nameFingerprint = fingerprint(this.sodium, name)
+    const serializedCipher = _serializeCipher(keychainItem.cipher)
+    const nameFingerprint = fingerprint(this.sodium, keychainItem.name)
     // Remove padding for payload fingerprint as it is not deterministic
-    const payloadFingerprint = fingerprint(this.sodium, serializedCipher.trim())
-    const createdAtISO = createdAt.toISOString()
-    const expiresAtISO = expiresAt?.toISOString() ?? null
+    const payloadFingerprint = fingerprint(this.sodium, serializedCipher)
+    const createdAtISO = keychainItem.createdAt.toISOString()
+    const expiresAtISO =
+      expiresAt?.toISOString() ?? keychainItem.expiresAt?.toISOString() ?? null
     const body: PostSharedKeyBody = {
       fromUserId: this.#state.identity.userId,
       fromSharingPublicKey: this.encode(this.#state.identity.sharing.publicKey),
@@ -471,10 +479,15 @@ export class Client {
       toUserId: to.userId,
       createdAt: createdAtISO,
       expiresAt: expiresAtISO,
-      name: encrypt(this.sodium, name, sendTo, encodedCiphertextFormatV1),
+      name: encrypt(
+        this.sodium,
+        keychainItem.name,
+        sendTo,
+        encodedCiphertextFormatV1
+      ),
       payload: encrypt(
         this.sodium,
-        serializedCipher,
+        randomPad(serializedCipher, CIPHER_MAX_PADDED_LENGTH),
         sendTo,
         encodedCiphertextFormatV1
       ),
@@ -660,12 +673,7 @@ export class Client {
         expiresAt: lockedItem.expiresAt ? new Date(lockedItem.expiresAt) : null,
         sharedBy: lockedItem.sharedBy,
       }
-      this.#state.keychain.set(
-        item.name,
-        [...(this.#state.keychain.get(item.name) ?? []), item].sort(
-          byCreatedAtMostRecentFirst
-        )
-      )
+      addToKeychain(this.#state.keychain, item)
       this.#mitt.emit('keychainUpdated', null)
       this.#sync.setState(this.#state)
     }
@@ -955,6 +963,29 @@ function stateParser(input: string): State {
 }
 
 // --
+
+function serializeKeychainItem(item: KeychainItem) {
+  return JSON.stringify({
+    ...item,
+    cipher: _serializeCipher(item.cipher),
+  })
+}
+
+function addToKeychain(keychain: Keychain, newItem: KeychainItem) {
+  const items = keychain.get(newItem.name) ?? []
+  if (items.length === 0) {
+    keychain.set(newItem.name, [newItem])
+    return
+  }
+  const serialized = serializeKeychainItem(newItem)
+  if (
+    items.findIndex(item => serializeKeychainItem(item) === serialized) >= 0
+  ) {
+    return // Already in there
+  }
+  items.push(newItem)
+  items.sort(byCreatedAtMostRecentFirst)
+}
 
 function byCreatedAtMostRecentFirst(a: KeychainItem, b: KeychainItem) {
   return b.createdAt.valueOf() - a.createdAt.valueOf()

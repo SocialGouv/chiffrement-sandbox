@@ -43,15 +43,15 @@ const ShareKeyPage: NextPage = () => {
   }, [toUserId, client, toast])
 
   const shareKey = React.useCallback(async () => {
-    if (!key || !toUser) {
+    if (!keyName || !toUser) {
       return
     }
     try {
-      await client.shareKey(key, toUser)
+      await client.shareKey(keyName, toUser)
       toast({
         status: 'success',
         title: 'Key shared',
-        description: `Key ${key.name} was sent to ${toUser.userId}`,
+        description: `Key ${keyName} was sent to ${toUser.userId}`,
       })
     } catch (error) {
       if (error instanceof APIError) {
@@ -76,7 +76,7 @@ const ShareKeyPage: NextPage = () => {
         })
       }
     }
-  }, [client, key, toUser, toast])
+  }, [client, keyName, toUser, toast])
 
   return (
     <>
