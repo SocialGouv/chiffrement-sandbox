@@ -38,12 +38,6 @@ export default async function signupRoutes(app: App) {
       },
     },
     async function signup(req, res) {
-      // todo: Check if redundant
-      if (req.identity.userId !== req.body.userId) {
-        throw app.httpErrors.badRequest(
-          'Mismatching user ID between headers & body'
-        )
-      }
       await createIdentity(app.db, req.body)
       return res.status(201).send()
     }
