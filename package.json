@@ -27,6 +27,7 @@
     "@emotion/react": "^11.10.4",
     "@emotion/styled": "^11.10.4",
     "@fastify/nextjs": "^9.2.0",
+    "@stablelib/blake2b": "^1.0.1",
     "comlink": "^4.3.1",
     "dotenv": "^16.0.3",
     "fastify": "^4.9.2",
