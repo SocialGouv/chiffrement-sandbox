@@ -24,7 +24,7 @@ $ yarn install
 $ yarn keygen signature
 ```
 
-3. Démarrer la base de donnée PostgreSQL via docker-compose, puis application des migrations
+3. Démarrer la base de donnée PostgreSQL, puis application des migrations
    et des seeds:
 
 ```shell
