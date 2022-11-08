@@ -64,10 +64,10 @@ export function getKeysSharedByMe(
 ): Promise<SharedKeySchema[]> {
   return sql`
     SELECT *
-    FROM ${sql(TABLE_NAME)}
-    WHERE ${sql('fromUserId')} = ${identity.userId}
-    AND ${sql('fromSharingPublicKey')} = ${identity.sharingPublicKey}
-    AND ${sql('fromSignaturePublicKey')} = ${identity.signaturePublicKey}
+    FROM  ${sql(TABLE_NAME)}
+    WHERE ${sql('fromUserId')}              = ${identity.userId}
+    AND   ${sql('fromSharingPublicKey')}    = ${identity.sharingPublicKey}
+    AND   ${sql('fromSignaturePublicKey')}  = ${identity.signaturePublicKey}
   `
 }
 
@@ -79,9 +79,22 @@ export function deleteSharedKey(
 ) {
   return sql`
     DELETE
-    FROM ${sql(TABLE_NAME)}
-    WHERE ${sql('fromUserId')} = ${from}
-    AND ${sql('toUserId')} = ${to}
-    AND ${sql('payloadFingerprint')} = ${payloadFingerprint}
+    FROM  ${sql(TABLE_NAME)}
+    WHERE ${sql('fromUserId')}          = ${from}
+    AND   ${sql('toUserId')}            = ${to}
+    AND   ${sql('payloadFingerprint')}  = ${payloadFingerprint}
+  `
+}
+
+export function deleteSharedKeysByName(
+  sql: Sql,
+  to: string,
+  nameFingerprint: string
+) {
+  return sql`
+    DELETE
+    FROM  ${sql(TABLE_NAME)}
+    WHERE ${sql('toUserId')}        = ${to}
+    AND   ${sql('nameFingerprint')} = ${nameFingerprint}
   `
 }

@@ -65,3 +65,16 @@ export function getKeyNameParticipants(sql: Sql, nameFingerprint: string) {
   WHERE ${sql('nameFingerprint')} = ${nameFingerprint}
   `
 }
+
+export function deleteKeychainItems(
+  sql: Sql,
+  ownerId: string,
+  nameFingerprint: string
+) {
+  return sql`
+    DELETE
+    FROM  ${sql(TABLE_NAME)}
+    WHERE ${sql('ownerId')}         = ${ownerId}
+    AND   ${sql('nameFingerprint')} = ${nameFingerprint}
+  `
+}

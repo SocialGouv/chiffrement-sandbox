@@ -21,7 +21,7 @@ import { APIError, PublicUserIdentity } from 'modules/crypto/client'
 import type { NextPage } from 'next'
 import { useRouter } from 'next/router'
 import React from 'react'
-import { FiCheckSquare, FiLock } from 'react-icons/fi'
+import { FiCheckSquare, FiLock, FiUserX } from 'react-icons/fi'
 
 const KeyPage: NextPage = () => {
   const keys = useClientKeys()
@@ -80,6 +80,10 @@ const KeyPage: NextPage = () => {
           Permissions
         </Heading>
         <Permissions mt={4} />
+        <Heading as="h2" fontSize="xl" mt={8}>
+          Ban
+        </Heading>
+        <BanUser mt={4} />
       </>
     </NoSSR>
   )
@@ -196,6 +200,77 @@ const Permissions: React.FC<StackProps> = props => {
       </Checkbox>
       <LoadingButton leftIcon={<FiCheckSquare />} onClick={onSubmit}>
         Set permissions
+      </LoadingButton>
+    </Stack>
+  )
+}
+
+const BanUser: React.FC<StackProps> = props => {
+  const client = useClient()
+  const keyName = useRouter().query.name as string
+  const [userId, setUserId] = React.useState('')
+  const [toUser, setToUser] = React.useState<PublicUserIdentity | null>(null)
+  const toast = useToast({
+    position: 'bottom-right',
+  })
+
+  const getRecipientIdentity = React.useCallback(async () => {
+    if (!userId.trim()) {
+      return
+    }
+    const identity = await client.getUserIdentity(userId)
+    if (!identity) {
+      toast({
+        status: 'warning',
+        title: 'Not found',
+        description: `Could not find an identity for user ID ${userId}`,
+      })
+    }
+    setToUser(identity)
+  }, [userId, client, toast])
+
+  const onSubmit = React.useCallback(async () => {
+    try {
+      await client.banUser(userId, keyName)
+      toast({
+        status: 'success',
+        title: 'Ban successful',
+        description: `Access to ${keyName} has been revoked for ${userId}`,
+      })
+    } catch (error) {
+      if (error instanceof APIError) {
+        toast({
+          status: 'error',
+          title: error.statusText,
+          description: error.message,
+        })
+      } else {
+        toast({
+          status: 'error',
+          title: (error as any).name,
+          description: (error as any).message ?? String(error),
+        })
+      }
+    }
+  }, [client, userId, keyName, toast])
+
+  return (
+    <Stack spacing={4} {...props}>
+      <FormControl>
+        <FormLabel>User ID</FormLabel>
+        <Input
+          value={userId}
+          onChange={e => setUserId(e.target.value)}
+          onBlur={getRecipientIdentity}
+        />
+        {toUser && (
+          <FormHelperText>
+            Public key: {client.encode(toUser.signaturePublicKey)}
+          </FormHelperText>
+        )}
+      </FormControl>
+      <LoadingButton leftIcon={<FiUserX />} onClick={onSubmit}>
+        Ban user
       </LoadingButton>
     </Stack>
   )

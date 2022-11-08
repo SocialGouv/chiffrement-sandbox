@@ -103,3 +103,16 @@ export function updatePermission(
     SET ${sql(update)}
   `
 }
+
+export function deletePermission(
+  sql: Sql,
+  userId: string,
+  nameFingerprint: string
+) {
+  return sql`
+    DELETE
+    FROM   ${sql(TABLE_NAME)}
+    WHERE  ${sql('userId')}          = ${userId}
+    AND    ${sql('nameFingerprint')} = ${nameFingerprint}
+  `
+}

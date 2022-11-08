@@ -1,10 +1,7 @@
 import { LocalStateSync } from 'local-state-sync'
 import mitt, { Emitter } from 'mitt'
-import {
-  PermissionFlags,
-  PostPermissionRequestBody,
-} from 'modules/api/permissions.js'
 import { z } from 'zod'
+import type { PostBanRequestBody } from '../api/ban.js'
 import type {
   GetMultipleIdentitiesResponseBody,
   GetSingleIdentityResponseBody,
@@ -14,6 +11,10 @@ import type {
   PostKeychainItemRequestBody,
 } from '../api/keychain.js'
 import { loginResponseBody } from '../api/login.js'
+import type {
+  PermissionFlags,
+  PostPermissionRequestBody,
+} from '../api/permissions.js'
 import type {
   GetSharedKeysResponseBody,
   PostSharedKeyBody,
@@ -615,6 +616,14 @@ export class Client {
       ...permissions,
     }
     await this.apiCall('POST', '/permissions', body)
+  }
+
+  public async banUser(userId: string, keyName: string) {
+    const body: PostBanRequestBody = {
+      userId,
+      nameFingerprint: fingerprint(this.sodium, keyName),
+    }
+    await this.apiCall('POST', '/ban', body)
   }
 
   // Encryption / Decryption --
