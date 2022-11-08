@@ -1,5 +1,9 @@
 import { LocalStateSync } from 'local-state-sync'
 import mitt, { Emitter } from 'mitt'
+import {
+  PermissionFlags,
+  PostPermissionRequestBody,
+} from 'modules/api/permissions.js'
 import { z } from 'zod'
 import type {
   GetMultipleIdentitiesResponseBody,
@@ -596,6 +600,21 @@ export class Client {
       console.error(error)
       return []
     }
+  }
+
+  // Permissions --
+
+  public async setPermissions(
+    userId: string,
+    keyName: string,
+    permissions: Partial<PermissionFlags>
+  ) {
+    const body: PostPermissionRequestBody = {
+      userId,
+      nameFingerprint: fingerprint(this.sodium, keyName),
+      ...permissions,
+    }
+    await this.apiCall('POST', '/permissions', body)
   }
 
   // Encryption / Decryption --

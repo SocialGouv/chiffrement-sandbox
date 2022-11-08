@@ -1,5 +1,4 @@
 import {
-  Button,
   FormControl,
   FormHelperText,
   FormLabel,
@@ -10,6 +9,7 @@ import {
   useToast,
 } from '@chakra-ui/react'
 import { useClient, useClientKeys } from 'client/components/ClientProvider'
+import { LoadingButton } from 'client/components/LoadingButton'
 import { NoSSR } from 'client/components/NoSSR'
 import { APIError, PublicUserIdentity } from 'modules/crypto/client'
 import type { NextPage } from 'next'
@@ -117,9 +117,9 @@ const ShareKeyPage: NextPage = () => {
             </FormHelperText>
           )}
         </FormControl>
-        <Button onClick={shareKey} leftIcon={<FiShare2 />}>
+        <LoadingButton onClick={shareKey} leftIcon={<FiShare2 />}>
           Share
-        </Button>
+        </LoadingButton>
       </Stack>
     </>
   )

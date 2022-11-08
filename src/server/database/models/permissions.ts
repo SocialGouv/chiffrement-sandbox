@@ -68,29 +68,38 @@ export function updatePermission(
   {
     userId,
     nameFingerprint,
-    ...input
+    allowSharing,
+    allowRotation,
+    allowDeletion,
+    allowManagement,
   }: Pick<PermissionSchema, 'userId' | 'nameFingerprint'> &
-    Partial<
-      Pick<
-        PermissionSchema,
-        'allowSharing' | 'allowRotation' | 'allowDeletion' | 'allowManagement'
-      >
-    >
+    Partial<PermissionFlags>
 ) {
-  const columnsToUpdate = (
-    [
-      'allowSharing',
-      'allowRotation',
-      'allowDeletion',
-      'allowManagement',
-    ] as const
-  )
-    .filter(columnName => input[columnName] !== undefined)
-    .map(columnName => sql(columnName))
+  const insert = {
+    userId,
+    nameFingerprint,
+    allowDeletion: allowDeletion ?? false,
+    allowManagement: allowManagement ?? false,
+    allowRotation: allowRotation ?? false,
+    allowSharing: allowSharing ?? false,
+  }
+  const update: Record<string, boolean> = {}
+  if (allowDeletion !== undefined) {
+    update.allowDeletion = allowDeletion
+  }
+  if (allowManagement !== undefined) {
+    update.allowManagement = allowManagement
+  }
+  if (allowRotation !== undefined) {
+    update.allowRotation = allowRotation
+  }
+  if (allowSharing !== undefined) {
+    update.allowSharing = allowSharing
+  }
   return sql`
-    UPDATE FROM ${sql(TABLE_NAME)}
-    SET   ${sql(input, ...(columnsToUpdate as any))}
-    WHERE ${sql('userId')}          = ${userId}
-    AND   ${sql('nameFingerprint')} = ${nameFingerprint}
+    INSERT INTO  ${sql(TABLE_NAME)} ${sql(insert)}
+    ON CONFLICT (${sql('userId')}, ${sql('nameFingerprint')})
+    DO UPDATE
+    SET ${sql(update)}
   `
 }

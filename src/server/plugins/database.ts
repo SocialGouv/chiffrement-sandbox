@@ -33,6 +33,13 @@ const databasePlugin: FastifyPluginAsync = async (app: App) => {
       debug:
         process.env.DEBUG &&
         function debugDatabaseQuery(connection, query, parameters, paramTypes) {
+          if (
+            query ===
+            'SELECT pg_database_size(current_database()::name) AS size_used'
+          ) {
+            // Health check
+            return
+          }
           app.log.debug({
             msg: 'database:debug',
             connection,
