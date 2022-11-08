@@ -26,7 +26,7 @@ const healthCheckReply = z.object({
   }),
 })
 
-type HealthCheckReply = z.TypeOf<typeof healthCheckReply>
+type HealthCheckReply = z.infer<typeof healthCheckReply>
 
 export function createServer() {
   const __PROD__ = process.env.NODE_ENV === 'production'

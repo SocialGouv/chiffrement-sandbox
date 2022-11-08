@@ -17,7 +17,7 @@ export const keychainItemSchema = z.object({
   signature: z.string(),
 })
 
-export type KeychainItemSchema = z.TypeOf<typeof keychainItemSchema>
+export type KeychainItemSchema = z.infer<typeof keychainItemSchema>
 
 export function storeKeychainItem(
   sql: Sql,

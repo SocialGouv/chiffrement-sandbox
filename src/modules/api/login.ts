@@ -8,4 +8,4 @@ export const loginResponseBody = signupRequestBody.pick({
   sharingPrivateKey: true,
 })
 
-export type LoginResponseBody = z.TypeOf<typeof loginResponseBody>
+export type LoginResponseBody = z.infer<typeof loginResponseBody>

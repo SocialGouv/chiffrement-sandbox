@@ -20,7 +20,7 @@ export const sharedKeySchema = z.object({
   signature: z.string(),
 })
 
-export type SharedKeySchema = z.TypeOf<typeof sharedKeySchema>
+export type SharedKeySchema = z.infer<typeof sharedKeySchema>
 
 export function storeSharedKey(
   sql: Sql,

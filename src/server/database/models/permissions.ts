@@ -16,7 +16,7 @@ export const permissionSchema = z.object({
   allowManagement: z.boolean(),
 })
 
-export type PermissionSchema = z.TypeOf<typeof permissionSchema>
+export type PermissionSchema = z.infer<typeof permissionSchema>
 
 // --
 

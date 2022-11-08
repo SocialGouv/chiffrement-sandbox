@@ -8,4 +8,4 @@ export const signupRequestBody = z.object({
   sharingPrivateKey: z.string(),
 })
 
-export type SignupRequestBody = z.TypeOf<typeof signupRequestBody>
+export type SignupRequestBody = z.infer<typeof signupRequestBody>

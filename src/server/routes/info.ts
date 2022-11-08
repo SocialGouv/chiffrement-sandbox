@@ -10,7 +10,7 @@ const infoResponseBody = z.object({
 
 export default async function infoRoutes(app: App) {
   app.get<{
-    Reply: z.TypeOf<typeof infoResponseBody>
+    Reply: z.infer<typeof infoResponseBody>
   }>(
     '/info',
     {

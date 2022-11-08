@@ -26,7 +26,7 @@ const userIdsParams = z.object({
 
 export default async function identitiesRoutes(app: App) {
   app.get<{
-    Params: z.TypeOf<typeof userIdParams>
+    Params: z.infer<typeof userIdParams>
     Headers: PublicKeyAuthHeaders
     Reply: GetSingleIdentityResponseBody
   }>(
@@ -52,7 +52,7 @@ export default async function identitiesRoutes(app: App) {
     }
   )
   app.get<{
-    Params: z.TypeOf<typeof userIdsParams>
+    Params: z.infer<typeof userIdsParams>
     Reply: GetMultipleIdentitiesResponseBody
   }>(
     '/identities/:userIds',

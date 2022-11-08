@@ -13,7 +13,7 @@ const keychainItem = z.object({
 })
 
 export const postKeychainItemRequestBody = keychainItem
-export type PostKeychainItemRequestBody = z.TypeOf<typeof keychainItem>
+export type PostKeychainItemRequestBody = z.infer<typeof keychainItem>
 
 export const getKeychainResponseBody = z.array(keychainItem)
-export type GetKeychainResponseBody = z.TypeOf<typeof getKeychainResponseBody>
+export type GetKeychainResponseBody = z.infer<typeof getKeychainResponseBody>

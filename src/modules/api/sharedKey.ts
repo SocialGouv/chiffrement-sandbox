@@ -17,9 +17,9 @@ const sharedKey = z.object({
 // --
 
 export const postSharedKeyBody = sharedKey
-export type PostSharedKeyBody = z.TypeOf<typeof postSharedKeyBody>
+export type PostSharedKeyBody = z.infer<typeof postSharedKeyBody>
 
 export const getSharedKeysResponseBody = z.array(sharedKey)
-export type GetSharedKeysResponseBody = z.TypeOf<
+export type GetSharedKeysResponseBody = z.infer<
   typeof getSharedKeysResponseBody
 >

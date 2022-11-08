@@ -11,5 +11,5 @@ export const publicKeyAuthHeaders = publicRouteHeaders.extend({
 
 // --
 
-export type PublicRouteHeaders = z.TypeOf<typeof publicRouteHeaders>
-export type PublicKeyAuthHeaders = z.TypeOf<typeof publicKeyAuthHeaders>
+export type PublicRouteHeaders = z.infer<typeof publicRouteHeaders>
+export type PublicKeyAuthHeaders = z.infer<typeof publicKeyAuthHeaders>

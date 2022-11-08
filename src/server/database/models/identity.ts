@@ -12,7 +12,7 @@ export const identitySchema = z.object({
   sharingPrivateKey: z.string(),
 })
 
-export type IdentitySchema = z.TypeOf<typeof identitySchema>
+export type IdentitySchema = z.infer<typeof identitySchema>
 
 export function createIdentity(
   sql: Sql,
