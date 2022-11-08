@@ -5,26 +5,32 @@ de clés entre utilisateurs authentifiés par clé publique.
 
 ## Setup
 
+0. Pré-requis:
+
+- Docker & `docker compose` (nécessite Docker Desktop sur Linux)
+- Node.js 16+
+- Yarn 1.x
+
 1. Installer les dépendances:
 
 ```shell
 $ yarn install
 ```
 
-2. Démarrer la base de donnée PostgreSQL via docker-compose, puis application des migrations
+2. Préparer les variables d'environment en dupliquant `.env.example` en `.env`,
+   et en ajoutant les clés de signature du serveur, générées via:
+
+```shell
+$ yarn keygen signature
+```
+
+3. Démarrer la base de donnée PostgreSQL via docker-compose, puis application des migrations
    et des seeds:
 
 ```shell
 $ yarn db:start
 $ yarn db:migrations apply
 $ yarn db:migrations seed
-```
-
-3. Préparer les variables d'environment en dupliquant `.env.example` en `.env`,
-   et en ajoutant les clés de signature du serveur, générées via:
-
-```shell
-$ yarn keygen signature
 ```
 
 4. Lancer le serveur de dev:
@@ -34,6 +40,9 @@ $ yarn dev
 ```
 
 L'appli tourne sur http://localhost:3000
+
+5. Les identifiants des utilisateurs de test _(userId et personalKey)_
+   sont disponibles dans ./src/server/database/seeds/identities.mjs
 
 ## Ajout de migrations
 
