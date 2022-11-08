@@ -6,7 +6,6 @@ export type BoxCipher<DataType = Uint8Array> = {
   algorithm: 'box'
   publicKey: DataType
   privateKey: DataType
-  nonce?: DataType
 }
 
 export type SealedBoxCipher<DataType = Uint8Array> = {
@@ -18,25 +17,25 @@ export type SealedBoxCipher<DataType = Uint8Array> = {
 export type SecretBoxCipher<DataType = Uint8Array> = {
   algorithm: 'secretBox'
   key: DataType
-  nonce?: DataType
 }
 
 export type Cipher = BoxCipher | SealedBoxCipher | SecretBoxCipher
 
 // Factories --
 
+export function generateBoxKeyPair(sodium: Sodium) {
+  const { publicKey, privateKey } = sodium.crypto_box_keypair()
+  return { publicKey, privateKey }
+}
+
 export function generateBoxCipher(
-  sodium: Sodium,
-  nonce?: Uint8Array
+  theirPublicKey: Uint8Array,
+  yourPrivateKey: Uint8Array
 ): BoxCipher {
-  // todo: This make little sense, box is supposed to be
-  // DH over different identities.
-  const keyPair = sodium.crypto_box_keypair()
   return {
     algorithm: 'box',
-    publicKey: keyPair.publicKey,
-    privateKey: keyPair.privateKey,
-    nonce,
+    publicKey: theirPublicKey,
+    privateKey: yourPrivateKey,
   }
 }
 
@@ -49,14 +48,10 @@ export function generateSealedBoxCipher(sodium: Sodium): SealedBoxCipher {
   }
 }
 
-export function generateSecretBoxCipher(
-  sodium: Sodium,
-  nonce?: Uint8Array
-): SecretBoxCipher {
+export function generateSecretBoxCipher(sodium: Sodium): SecretBoxCipher {
   return {
     algorithm: 'secretBox',
     key: sodium.crypto_secretbox_keygen(),
-    nonce,
   }
 }
 
@@ -72,7 +67,6 @@ export const CIPHER_MAX_PADDED_LENGTH = 150
  */
 export function _serializeCipher(cipher: Cipher) {
   if (cipher.algorithm === 'box') {
-    // todo: Does this make sense?
     const payload: Omit<BoxCipher<string>, 'nonce'> = {
       algorithm: cipher.algorithm,
       publicKey: base64UrlEncode(cipher.publicKey),
@@ -145,9 +139,6 @@ export function isSecretBoxCipher(cipher: Cipher): cipher is SecretBoxCipher {
 export function memzeroCipher(sodium: Sodium, cipher: Cipher) {
   if (cipher.algorithm === 'box') {
     sodium.memzero(cipher.privateKey)
-    if (cipher.nonce) {
-      sodium.memzero(cipher.nonce)
-    }
     return
   }
   if (cipher.algorithm === 'sealedBox') {
@@ -156,9 +147,6 @@ export function memzeroCipher(sodium: Sodium, cipher: Cipher) {
   }
   if (cipher.algorithm === 'secretBox') {
     sodium.memzero(cipher.key)
-    if (cipher.nonce) {
-      sodium.memzero(cipher.nonce)
-    }
     return
   }
   throw new Error('Unsupported cipher algorithm')

@@ -30,7 +30,7 @@ import {
   BoxCipher,
   cipherParser,
   CIPHER_MAX_PADDED_LENGTH,
-  generateBoxCipher,
+  generateBoxKeyPair,
   memzeroCipher,
   SecretBoxCipher,
   _serializeCipher,
@@ -256,14 +256,10 @@ export class Client {
         'Please log out of your current account before signing up for another one'
       )
     }
-    const sharing = generateBoxCipher(this.sodium)
     const identity: Identity = {
       userId,
+      sharing: generateBoxKeyPair(this.sodium),
       signature: generateSignatureKeyPair(this.sodium),
-      sharing: {
-        publicKey: sharing.publicKey,
-        privateKey: sharing.privateKey,
-      },
     }
     const withPersonalKey: SecretBoxCipher = {
       algorithm: 'secretBox',

@@ -1,8 +1,5 @@
-import {
-  generateBoxCipher,
-  generateSealedBoxCipher,
-  generateSecretBoxCipher,
-} from './ciphers.js'
+import { generateSealedBoxCipher } from './ciphers.js'
+import { _generateBoxCipher, _generateSecretBoxCipher } from './ciphers.test.js'
 import { decrypt, encodedCiphertextFormatV1, encrypt } from './encryption.js'
 import { ready, sodium } from './sodium.js'
 import { concat } from './utils.js'
@@ -42,7 +39,7 @@ describe('encryption', () => {
     describe.each(BUFFER_SIZES)('buffer input (size %d)', cleartextLength => {
       test('-> buffer', async () => {
         const input = sodium.randombytes_buf(cleartextLength)
-        const cipher = generateBoxCipher(sodium)
+        const cipher = _generateBoxCipher(sodium)
         const ciphertext = encrypt(sodium, input, cipher, 'uint8array')
         const cleartext = decrypt(sodium, ciphertext, cipher)
         expect(cleartext).toEqual(input)
@@ -55,7 +52,7 @@ describe('encryption', () => {
 
       test('-> hex', async () => {
         const input = sodium.randombytes_buf(cleartextLength)
-        const cipher = generateBoxCipher(sodium)
+        const cipher = _generateBoxCipher(sodium)
         const ciphertext = encrypt(sodium, input, cipher, 'hex')
         const cleartext = decrypt(sodium, ciphertext, cipher, 'hex')
         expect(cleartext).toEqual(input)
@@ -69,7 +66,7 @@ describe('encryption', () => {
 
       test('-> base64', async () => {
         const input = sodium.randombytes_buf(cleartextLength)
-        const cipher = generateBoxCipher(sodium)
+        const cipher = _generateBoxCipher(sodium)
         const ciphertext = encrypt(sodium, input, cipher, 'base64')
         const cleartext = decrypt(sodium, ciphertext, cipher, 'base64')
         expect(cleartext).toEqual(input)
@@ -85,7 +82,7 @@ describe('encryption', () => {
 
       test('-> encodedCiphertextFormatV1', async () => {
         const input = sodium.randombytes_buf(32)
-        const cipher = generateBoxCipher(sodium)
+        const cipher = _generateBoxCipher(sodium)
         const ciphertext = encrypt(
           sodium,
           input,
@@ -106,7 +103,7 @@ describe('encryption', () => {
       test('output format equivalence', async () => {
         const input = sodium.randombytes_buf(cleartextLength)
         const nonce = sodium.randombytes_buf(sodium.crypto_box_NONCEBYTES)
-        const cipher = generateBoxCipher(sodium, nonce)
+        const cipher = _generateBoxCipher(sodium)
         const buffer = encrypt(sodium, input, cipher, 'uint8array')
         const hex = encrypt(sodium, input, cipher, 'hex')
         const base64 = encrypt(sodium, input, cipher, 'base64')
@@ -125,7 +122,7 @@ describe('encryption', () => {
 
     describe.each(STRING_INPUTS)('string input (%s)', (_, input) => {
       test('-> buffer', async () => {
-        const cipher = generateBoxCipher(sodium)
+        const cipher = _generateBoxCipher(sodium)
         const ciphertext = encrypt(sodium, input, cipher, 'uint8array')
         const cleartext = decrypt(sodium, ciphertext, cipher)
         expect(sodium.to_string(cleartext)).toEqual(input)
@@ -137,7 +134,7 @@ describe('encryption', () => {
       })
 
       test('-> hex', async () => {
-        const cipher = generateBoxCipher(sodium)
+        const cipher = _generateBoxCipher(sodium)
         const ciphertext = encrypt(sodium, input, cipher, 'hex')
         const cleartext = decrypt(sodium, ciphertext, cipher, 'hex')
         expect(sodium.to_string(cleartext)).toEqual(input)
@@ -150,7 +147,7 @@ describe('encryption', () => {
       })
 
       test('-> base64', async () => {
-        const cipher = generateBoxCipher(sodium)
+        const cipher = _generateBoxCipher(sodium)
         const ciphertext = encrypt(sodium, input, cipher, 'base64')
         const cleartext = decrypt(sodium, ciphertext, cipher, 'base64')
         expect(sodium.to_string(cleartext)).toEqual(input)
@@ -165,7 +162,7 @@ describe('encryption', () => {
       })
 
       test('-> encodedCiphertextFormatV1', async () => {
-        const cipher = generateBoxCipher(sodium)
+        const cipher = _generateBoxCipher(sodium)
         const ciphertext = encrypt(
           sodium,
           input,
@@ -185,7 +182,7 @@ describe('encryption', () => {
 
       test('output format equivalence', async () => {
         const nonce = sodium.randombytes_buf(sodium.crypto_box_NONCEBYTES)
-        const cipher = generateBoxCipher(sodium, nonce)
+        const cipher = _generateBoxCipher(sodium, nonce)
         const buffer = encrypt(sodium, input, cipher, 'uint8array')
         const hex = encrypt(sodium, input, cipher, 'hex')
         const base64 = encrypt(sodium, input, cipher, 'base64')
@@ -204,28 +201,28 @@ describe('encryption', () => {
 
     describe.each(NUMBER_INPUTS)('number input (%d)', input => {
       test('-> buffer', async () => {
-        const cipher = generateBoxCipher(sodium)
+        const cipher = _generateBoxCipher(sodium)
         const ciphertext = encrypt(sodium, input, cipher, 'uint8array')
         const cleartext = decrypt(sodium, ciphertext, cipher)
         expect(JSON.parse(sodium.to_string(cleartext))).toEqual(input)
       })
 
       test('-> hex', async () => {
-        const cipher = generateBoxCipher(sodium)
+        const cipher = _generateBoxCipher(sodium)
         const ciphertext = encrypt(sodium, input, cipher, 'hex')
         const cleartext = decrypt(sodium, ciphertext, cipher, 'hex')
         expect(JSON.parse(sodium.to_string(cleartext))).toEqual(input)
       })
 
       test('-> base64', async () => {
-        const cipher = generateBoxCipher(sodium)
+        const cipher = _generateBoxCipher(sodium)
         const ciphertext = encrypt(sodium, input, cipher, 'base64')
         const cleartext = decrypt(sodium, ciphertext, cipher, 'base64')
         expect(JSON.parse(sodium.to_string(cleartext))).toEqual(input)
       })
 
       test('-> encodedCiphertextFormatV1', async () => {
-        const cipher = generateBoxCipher(sodium)
+        const cipher = _generateBoxCipher(sodium)
         const ciphertext = encrypt(
           sodium,
           input,
@@ -245,7 +242,7 @@ describe('encryption', () => {
 
       test('output format equivalence', async () => {
         const nonce = sodium.randombytes_buf(sodium.crypto_box_NONCEBYTES)
-        const cipher = generateBoxCipher(sodium, nonce)
+        const cipher = _generateBoxCipher(sodium, nonce)
         const buffer = encrypt(sodium, input, cipher, 'uint8array')
         const hex = encrypt(sodium, input, cipher, 'hex')
         const base64 = encrypt(sodium, input, cipher, 'base64')
@@ -264,28 +261,28 @@ describe('encryption', () => {
 
     describe.each([true, false])('boolean input (%s)', input => {
       test('boolean -> buffer', async () => {
-        const cipher = generateBoxCipher(sodium)
+        const cipher = _generateBoxCipher(sodium)
         const ciphertext = encrypt(sodium, input, cipher, 'uint8array')
         const cleartext = decrypt(sodium, ciphertext, cipher)
         expect(JSON.parse(sodium.to_string(cleartext))).toEqual(input)
       })
 
       test('boolean -> hex', async () => {
-        const cipher = generateBoxCipher(sodium)
+        const cipher = _generateBoxCipher(sodium)
         const ciphertext = encrypt(sodium, input, cipher, 'hex')
         const cleartext = decrypt(sodium, ciphertext, cipher, 'hex')
         expect(JSON.parse(sodium.to_string(cleartext))).toEqual(input)
       })
 
       test('boolean -> base64', async () => {
-        const cipher = generateBoxCipher(sodium)
+        const cipher = _generateBoxCipher(sodium)
         const ciphertext = encrypt(sodium, input, cipher, 'base64')
         const cleartext = decrypt(sodium, ciphertext, cipher, 'base64')
         expect(JSON.parse(sodium.to_string(cleartext))).toEqual(input)
       })
 
       test('boolean -> encodedCiphertextFormatV1', async () => {
-        const cipher = generateBoxCipher(sodium)
+        const cipher = _generateBoxCipher(sodium)
         const ciphertext = encrypt(
           sodium,
           input,
@@ -305,7 +302,7 @@ describe('encryption', () => {
 
       test('boolean -> output format equivalence', async () => {
         const nonce = sodium.randombytes_buf(sodium.crypto_box_NONCEBYTES)
-        const cipher = generateBoxCipher(sodium, nonce)
+        const cipher = _generateBoxCipher(sodium, nonce)
         const buffer = encrypt(sodium, input, cipher, 'uint8array')
         const hex = encrypt(sodium, input, cipher, 'hex')
         const base64 = encrypt(sodium, input, cipher, 'base64')
@@ -329,7 +326,7 @@ describe('encryption', () => {
     describe.each(BUFFER_SIZES)('buffer input (size %d)', cleartextLength => {
       test('-> buffer', async () => {
         const input = sodium.randombytes_buf(cleartextLength)
-        const cipher = generateSecretBoxCipher(sodium)
+        const cipher = _generateSecretBoxCipher(sodium)
         const ciphertext = encrypt(sodium, input, cipher, 'uint8array')
         const cleartext = decrypt(sodium, ciphertext, cipher)
         expect(cleartext).toEqual(input)
@@ -342,7 +339,7 @@ describe('encryption', () => {
 
       test('-> hex', async () => {
         const input = sodium.randombytes_buf(cleartextLength)
-        const cipher = generateSecretBoxCipher(sodium)
+        const cipher = _generateSecretBoxCipher(sodium)
         const ciphertext = encrypt(sodium, input, cipher, 'hex')
         const cleartext = decrypt(sodium, ciphertext, cipher, 'hex')
         expect(cleartext).toEqual(input)
@@ -356,7 +353,7 @@ describe('encryption', () => {
 
       test('-> base64', async () => {
         const input = sodium.randombytes_buf(cleartextLength)
-        const cipher = generateSecretBoxCipher(sodium)
+        const cipher = _generateSecretBoxCipher(sodium)
         const ciphertext = encrypt(sodium, input, cipher, 'base64')
         const cleartext = decrypt(sodium, ciphertext, cipher, 'base64')
         expect(cleartext).toEqual(input)
@@ -372,7 +369,7 @@ describe('encryption', () => {
 
       test('-> encodedCiphertextFormatV1', async () => {
         const input = sodium.randombytes_buf(32)
-        const cipher = generateSecretBoxCipher(sodium)
+        const cipher = _generateSecretBoxCipher(sodium)
         const ciphertext = encrypt(
           sodium,
           input,
@@ -393,7 +390,7 @@ describe('encryption', () => {
       test('output format equivalence', async () => {
         const input = sodium.randombytes_buf(cleartextLength)
         const nonce = sodium.randombytes_buf(sodium.crypto_secretbox_NONCEBYTES)
-        const cipher = generateSecretBoxCipher(sodium, nonce)
+        const cipher = _generateSecretBoxCipher(sodium, nonce)
         const buffer = encrypt(sodium, input, cipher, 'uint8array')
         const hex = encrypt(sodium, input, cipher, 'hex')
         const base64 = encrypt(sodium, input, cipher, 'base64')
@@ -412,7 +409,7 @@ describe('encryption', () => {
 
     describe.each(STRING_INPUTS)('string input (%s)', (_, input) => {
       test('-> buffer', async () => {
-        const cipher = generateSecretBoxCipher(sodium)
+        const cipher = _generateSecretBoxCipher(sodium)
         const ciphertext = encrypt(sodium, input, cipher, 'uint8array')
         const cleartext = decrypt(sodium, ciphertext, cipher)
         expect(sodium.to_string(cleartext)).toEqual(input)
@@ -424,7 +421,7 @@ describe('encryption', () => {
       })
 
       test('-> hex', async () => {
-        const cipher = generateSecretBoxCipher(sodium)
+        const cipher = _generateSecretBoxCipher(sodium)
         const ciphertext = encrypt(sodium, input, cipher, 'hex')
         const cleartext = decrypt(sodium, ciphertext, cipher, 'hex')
         expect(sodium.to_string(cleartext)).toEqual(input)
@@ -437,7 +434,7 @@ describe('encryption', () => {
       })
 
       test('-> base64', async () => {
-        const cipher = generateSecretBoxCipher(sodium)
+        const cipher = _generateSecretBoxCipher(sodium)
         const ciphertext = encrypt(sodium, input, cipher, 'base64')
         const cleartext = decrypt(sodium, ciphertext, cipher, 'base64')
         expect(sodium.to_string(cleartext)).toEqual(input)
@@ -452,7 +449,7 @@ describe('encryption', () => {
       })
 
       test('-> encodedCiphertextFormatV1', async () => {
-        const cipher = generateSecretBoxCipher(sodium)
+        const cipher = _generateSecretBoxCipher(sodium)
         const ciphertext = encrypt(
           sodium,
           input,
@@ -472,7 +469,7 @@ describe('encryption', () => {
 
       test('output format equivalence', async () => {
         const nonce = sodium.randombytes_buf(sodium.crypto_secretbox_NONCEBYTES)
-        const cipher = generateSecretBoxCipher(sodium, nonce)
+        const cipher = _generateSecretBoxCipher(sodium, nonce)
         const buffer = encrypt(sodium, input, cipher, 'uint8array')
         const hex = encrypt(sodium, input, cipher, 'hex')
         const base64 = encrypt(sodium, input, cipher, 'base64')
@@ -490,28 +487,28 @@ describe('encryption', () => {
 
     describe.each(NUMBER_INPUTS)('number input (%f)', input => {
       test('-> buffer', async () => {
-        const cipher = generateSecretBoxCipher(sodium)
+        const cipher = _generateSecretBoxCipher(sodium)
         const ciphertext = encrypt(sodium, input, cipher, 'uint8array')
         const cleartext = decrypt(sodium, ciphertext, cipher)
         expect(JSON.parse(sodium.to_string(cleartext))).toEqual(input)
       })
 
       test('-> hex', async () => {
-        const cipher = generateSecretBoxCipher(sodium)
+        const cipher = _generateSecretBoxCipher(sodium)
         const ciphertext = encrypt(sodium, input, cipher, 'hex')
         const cleartext = decrypt(sodium, ciphertext, cipher, 'hex')
         expect(JSON.parse(sodium.to_string(cleartext))).toEqual(input)
       })
 
       test('-> base64', async () => {
-        const cipher = generateSecretBoxCipher(sodium)
+        const cipher = _generateSecretBoxCipher(sodium)
         const ciphertext = encrypt(sodium, input, cipher, 'base64')
         const cleartext = decrypt(sodium, ciphertext, cipher, 'base64')
         expect(JSON.parse(sodium.to_string(cleartext))).toEqual(input)
       })
 
       test('-> encodedCiphertextFormatV1', async () => {
-        const cipher = generateSecretBoxCipher(sodium)
+        const cipher = _generateSecretBoxCipher(sodium)
         const ciphertext = encrypt(
           sodium,
           input,
@@ -531,7 +528,7 @@ describe('encryption', () => {
 
       test('output format equivalence', async () => {
         const nonce = sodium.randombytes_buf(sodium.crypto_secretbox_NONCEBYTES)
-        const cipher = generateSecretBoxCipher(sodium, nonce)
+        const cipher = _generateSecretBoxCipher(sodium, nonce)
         const buffer = encrypt(sodium, input, cipher, 'uint8array')
         const hex = encrypt(sodium, input, cipher, 'hex')
         const base64 = encrypt(sodium, input, cipher, 'base64')
@@ -549,28 +546,28 @@ describe('encryption', () => {
 
     describe.each([true, false])('boolean input (%s)', input => {
       test('-> buffer', async () => {
-        const cipher = generateSecretBoxCipher(sodium)
+        const cipher = _generateSecretBoxCipher(sodium)
         const ciphertext = encrypt(sodium, input, cipher, 'uint8array')
         const cleartext = decrypt(sodium, ciphertext, cipher)
         expect(JSON.parse(sodium.to_string(cleartext))).toEqual(input)
       })
 
       test('-> hex', async () => {
-        const cipher = generateSecretBoxCipher(sodium)
+        const cipher = _generateSecretBoxCipher(sodium)
         const ciphertext = encrypt(sodium, input, cipher, 'hex')
         const cleartext = decrypt(sodium, ciphertext, cipher, 'hex')
         expect(JSON.parse(sodium.to_string(cleartext))).toEqual(input)
       })
 
       test('-> base64', async () => {
-        const cipher = generateSecretBoxCipher(sodium)
+        const cipher = _generateSecretBoxCipher(sodium)
         const ciphertext = encrypt(sodium, input, cipher, 'base64')
         const cleartext = decrypt(sodium, ciphertext, cipher, 'base64')
         expect(JSON.parse(sodium.to_string(cleartext))).toEqual(input)
       })
 
       test('-> encodedCiphertextFormatV1', async () => {
-        const cipher = generateSecretBoxCipher(sodium)
+        const cipher = _generateSecretBoxCipher(sodium)
         const ciphertext = encrypt(
           sodium,
           input,
@@ -590,7 +587,7 @@ describe('encryption', () => {
 
       test('output format equivalence', async () => {
         const nonce = sodium.randombytes_buf(sodium.crypto_secretbox_NONCEBYTES)
-        const cipher = generateSecretBoxCipher(sodium, nonce)
+        const cipher = _generateSecretBoxCipher(sodium, nonce)
         const buffer = encrypt(sodium, input, cipher, 'uint8array')
         const hex = encrypt(sodium, input, cipher, 'hex')
         const base64 = encrypt(sodium, input, cipher, 'base64')

@@ -25,6 +25,10 @@ export const encodedCiphertextFormatV1 = 'application/e2esdk.ciphertext.v1'
 export type EncodedCiphertextFormat = typeof encodedCiphertextFormatV1
 export type EncryptableJSONDataType = string | number | boolean
 
+type CipherWithOptionalNonce = Cipher & {
+  nonce?: Uint8Array
+}
+
 /**
  * Encrypt input data into a string representation
  *
@@ -35,7 +39,7 @@ export type EncryptableJSONDataType = string | number | boolean
 export function encrypt<DataType extends Uint8Array | EncryptableJSONDataType>(
   sodium: Sodium,
   input: DataType,
-  cipher: Cipher,
+  cipher: CipherWithOptionalNonce,
   outputFormat?: StringOutputFormat | EncodedCiphertextFormat
 ): string
 
@@ -52,14 +56,14 @@ export function encrypt<DataType extends Uint8Array | EncryptableJSONDataType>(
 export function encrypt<DataType extends Uint8Array | EncryptableJSONDataType>(
   sodium: Sodium,
   input: DataType,
-  cipher: Cipher,
+  cipher: CipherWithOptionalNonce,
   outputFormat?: Uint8ArrayOutputFormat
 ): Uint8Array
 
 export function encrypt<DataType extends Uint8Array | EncryptableJSONDataType>(
   sodium: Sodium,
   input: DataType,
-  cipher: Cipher,
+  cipher: CipherWithOptionalNonce,
   outputFormat:
     | Uint8ArrayOutputFormat
     | StringOutputFormat
@@ -191,11 +195,6 @@ export function decrypt<Output = any>(
     const [nonce, ciphertext] = isUint8Array(payload)
       ? split(payload, sodium.crypto_box_NONCEBYTES)
       : [sodium.from_base64(payload[3]), sodium.from_base64(payload[4])]
-    // When providing the nonce via the cipher parameters,
-    // make sure it matches the one embedded in the message.
-    if (cipher.nonce && 0 !== sodium.compare(nonce, cipher.nonce)) {
-      throw new Error('Mismatch between provided & embedded nonces')
-    }
     const plaintext = sodium.crypto_box_open_easy(
       ciphertext,
       nonce,
@@ -221,11 +220,6 @@ export function decrypt<Output = any>(
     const [nonce, ciphertext] = isUint8Array(payload)
       ? split(payload, sodium.crypto_secretbox_NONCEBYTES)
       : [sodium.from_base64(payload[3]), sodium.from_base64(payload[4])]
-    // When providing the nonce via the cipher parameters,
-    // make sure it matches the one embedded in the message.
-    if (cipher.nonce && 0 !== sodium.compare(nonce, cipher.nonce)) {
-      throw new Error('Mismatch between provided & embedded nonces')
-    }
     const plaintext = sodium.crypto_secretbox_open_easy(
       ciphertext,
       nonce,
@@ -261,7 +255,7 @@ function decodePayload<Output>(
 export function encryptObject<Object extends object>(
   sodium: Sodium,
   input: Object,
-  cipher: Cipher
+  cipher: CipherWithOptionalNonce
 ) {
   return Object.fromEntries(
     Object.entries(input).map(([key, value]) => {
