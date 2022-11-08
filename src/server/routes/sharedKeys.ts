@@ -10,6 +10,7 @@ import {
   PostSharedKeyBody,
 } from '../../modules/api/sharedKey.js'
 import { getKeychainItem } from '../database/models/keychain.js'
+import { getPermission } from '../database/models/permissions.js'
 import {
   getKeysSharedByMe,
   getKeysSharedWithMe,
@@ -47,6 +48,14 @@ export default async function sharedKeysRoutes(app: App) {
         throw app.httpErrors.conflict(
           'The recipient already has a copy of this key'
         )
+      }
+      const { allowSharing } = await getPermission(
+        app.db,
+        req.identity.userId,
+        req.body.nameFingerprint
+      )
+      if (!allowSharing) {
+        throw app.httpErrors.forbidden('You are not allowed to share this key')
       }
       await storeSharedKey(app.db, req.body)
       return res.status(201).send()

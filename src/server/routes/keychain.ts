@@ -11,14 +11,15 @@ import {
 } from '../../modules/api/keychain.js'
 import { verifySignedHash } from '../../modules/crypto/signHash.js'
 import {
+  getKeyNameParticipants,
   getOwnKeychainItems,
   storeKeychainItem,
 } from '../database/models/keychain.js'
 import {
-  deleteSharedKey,
-  findSharedKey,
-  SharedKeySchema,
-} from '../database/models/sharedKey.js'
+  createPermission,
+  getPermission,
+} from '../database/models/permissions.js'
+import { deleteSharedKey, findSharedKey } from '../database/models/sharedKey.js'
 import type { App } from '../types.js'
 
 export default async function keychainRoutes(app: App) {
@@ -40,12 +41,12 @@ export default async function keychainRoutes(app: App) {
       },
     },
     async function postKeychainItem(req, res) {
-      function forbidden(msg: string, sharedKey?: SharedKeySchema): never {
+      function forbidden(msg: string, extra?: any): never {
         req.log.warn({
           msg,
           identity: req.identity,
           body: req.body,
-          sharedKey,
+          ...extra,
         })
         throw app.httpErrors.forbidden(msg)
       }
@@ -70,9 +71,57 @@ export default async function keychainRoutes(app: App) {
       }
 
       if (!req.body.sharedBy) {
-        await storeKeychainItem(app.db, req.body)
+        const participants = await getKeyNameParticipants(
+          app.db,
+          req.body.nameFingerprint
+        )
+        const isKeyAuthor = participants.length === 0
+        if (
+          !isKeyAuthor &&
+          participants.every(
+            participant => participant.ownerId !== req.identity.userId
+          )
+        ) {
+          // User is trying to add a key that already has participants,
+          // but user themselves are not in it, and they haven't specified
+          // where the key came from.
+          forbidden('You are not allowed to add this key', {
+            participants,
+          })
+        }
+        const { allowRotation } = await getPermission(
+          app.db,
+          req.identity.userId,
+          req.body.nameFingerprint
+        )
+        const isRotation =
+          !isKeyAuthor &&
+          participants.every(
+            key => key.payloadFingerprint !== req.body.payloadFingerprint
+          )
+        if (isRotation && !allowRotation) {
+          forbidden('You are not allowed to rotate this key', { participants })
+        }
+        // Note: rotating back to an old key is prevented by the use of
+        // a compound primary key encompassing (userId, payload_fingerprint).
+        await app.db.begin(async tx => {
+          if (isKeyAuthor) {
+            await createPermission(tx, {
+              userId: req.identity.userId,
+              nameFingerprint: req.body.nameFingerprint,
+              allowManagement: true,
+              allowRotation: true,
+              allowDeletion: true,
+              allowSharing: true,
+            })
+          }
+          await storeKeychainItem(tx, req.body)
+        })
         return res.status(201).send()
       }
+
+      // If the origin of the key is specified,
+      // make sure it matches a shared key entry.
 
       const sharedKey = await findSharedKey(
         app.db,
@@ -83,12 +132,6 @@ export default async function keychainRoutes(app: App) {
       if (!sharedKey) {
         forbidden('Could not find associated shared key')
       }
-      if (
-        sharedKey.fromUserId !== req.body.sharedBy ||
-        sharedKey.toUserId !== req.identity.userId
-      ) {
-        forbidden('Mismatch in shared key', sharedKey)
-      }
       for (const fieldToMatch of [
         'createdAt',
         'expiresAt',
@@ -96,10 +139,9 @@ export default async function keychainRoutes(app: App) {
         'payloadFingerprint',
       ] as const) {
         if (sharedKey[fieldToMatch] !== req.body[fieldToMatch]) {
-          forbidden(
-            `Mismatching field ${fieldToMatch} with shared key`,
-            sharedKey
-          )
+          forbidden(`Mismatching field ${fieldToMatch} with shared key`, {
+            sharedKey,
+          })
         }
       }
       await app.db.begin(

@@ -58,3 +58,10 @@ export async function getKeychainItem(
   `
   return getFirst(results)
 }
+
+export function getKeyNameParticipants(sql: Sql, nameFingerprint: string) {
+  return sql<KeychainItemSchema[]>`SELECT *
+  FROM ${sql(TABLE_NAME)}
+  WHERE ${sql('nameFingerprint')} = ${nameFingerprint}
+  `
+}
