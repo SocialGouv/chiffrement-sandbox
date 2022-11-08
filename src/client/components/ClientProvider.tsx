@@ -40,11 +40,13 @@ export function useClientIdentity() {
   return identity
 }
 
-export function useClientKeys() {
+export function useClientKeys(indexBy: 'name' | 'nameFingerprint' = 'name') {
   const client = useClient()
-  const [keys, setKeys] = React.useState(() => client.keys)
+  const [keys, setKeys] = React.useState(() => client.getKeysBy(indexBy))
   React.useEffect(() => {
-    return client.on('keychainUpdated', () => setKeys(client.keys))
-  }, [client])
+    return client.on('keychainUpdated', () =>
+      setKeys(client.getKeysBy(indexBy))
+    )
+  }, [client, indexBy])
   return keys
 }
