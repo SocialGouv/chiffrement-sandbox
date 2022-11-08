@@ -90,6 +90,24 @@ const keychainItemSchema = z.object({
 
 type KeychainItem = z.infer<typeof keychainItemSchema>
 
+const keychainItemMetadata = keychainItemSchema
+  .pick({
+    name: true,
+    createdAt: true,
+    expiresAt: true,
+    sharedBy: true,
+  })
+  .extend({
+    algorithm: z.union([
+      z.literal('box'),
+      z.literal('sealedBox'),
+      z.literal('secretBox'),
+    ]), // todo: Find better type
+    publicKey: z.string().optional(),
+  })
+
+type KeychainItemMetadata = z.infer<typeof keychainItemMetadata>
+
 // --
 
 const keychainSchema = z.array(keychainItemSchema).transform(array =>
@@ -434,14 +452,31 @@ export class Client {
     this.#sync.setState(this.#state)
   }
 
-  // todo: Expose less data (names, number of keys, metadata, public keys, but not complete ciphers)
   public get keys() {
     if (this.#state.state !== 'loaded') {
-      return []
+      return {}
     }
-    return Array.from(this.#state.keychain.values())
-      .flat()
-      .sort(byCreatedAtMostRecentFirst)
+    const out: Record<string, KeychainItemMetadata[]> = {}
+    this.#state.keychain.forEach((items, name) => {
+      out[name] = items
+        .map(({ cipher, ...item }) => {
+          const publicKeyBuffer =
+            cipher.algorithm === 'box'
+              ? cipher.publicKey
+              : cipher.algorithm === 'sealedBox'
+              ? cipher.publicKey
+              : undefined
+          return {
+            ...item,
+            algorithm: cipher.algorithm,
+            publicKey: publicKeyBuffer
+              ? this.encode(publicKeyBuffer)
+              : undefined,
+          }
+        })
+        .sort(byCreatedAtMostRecentFirst)
+    })
+    return out
   }
 
   // Sharing --
@@ -1000,7 +1035,7 @@ function addToKeychain(keychain: Keychain, newItem: KeychainItem) {
   items.sort(byCreatedAtMostRecentFirst)
 }
 
-function byCreatedAtMostRecentFirst(a: KeychainItem, b: KeychainItem) {
+function byCreatedAtMostRecentFirst<T extends { createdAt: Date }>(a: T, b: T) {
   return b.createdAt.valueOf() - a.createdAt.valueOf()
 }
 

@@ -22,7 +22,7 @@ const ShareKeyPage: NextPage = () => {
   const [toUser, setToUser] = React.useState<PublicUserIdentity | null>(null)
   const keys = useClientKeys()
   const client = useClient()
-  const key = keys.find(k => k.name === keyName)
+  const key = keys[keyName]?.[0]
   const toast = useToast({
     position: 'bottom-right',
   })
@@ -90,7 +90,7 @@ const ShareKeyPage: NextPage = () => {
             placeholder="Select a key"
           >
             <NoSSR>
-              {keys.map(({ name }) => (
+              {Object.keys(keys).map(name => (
                 <option key={name} value={name}>
                   {name}
                 </option>
@@ -99,8 +99,8 @@ const ShareKeyPage: NextPage = () => {
           </Select>
           {key && (
             <FormHelperText>
-              Type: {key.cipher.algorithm} - Created{' '}
-              {key.createdAt.toLocaleString()}
+              Type: {key.algorithm} - Created{' '}
+              {key.createdAt.toLocaleString(['se-SE'])}
             </FormHelperText>
           )}
         </FormControl>

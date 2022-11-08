@@ -1,13 +1,14 @@
 import {
-  Badge,
   Box,
   Button,
   Center,
   Flex,
   Heading,
+  Link,
   Stack,
   Text,
 } from '@chakra-ui/react'
+import { AlgorithmBadge } from 'client/components/AlgorithmBadge'
 import {
   useClientIdentity,
   useClientKeys,
@@ -56,35 +57,31 @@ const DashboardPage: NextPage = () => {
                 Keys
               </Heading>
             )}
-            {keys.map(key => (
+            {Object.entries(keys).map(([name, keys]) => (
               <Flex
+                key={name + keys[0]?.createdAt.toISOString()}
                 gap={4}
-                key={key.name + key.createdAt.toISOString()}
                 alignItems="center"
               >
-                <Badge
-                  w="4.5rem"
-                  textTransform="none"
-                  textAlign="center"
-                  colorScheme={
-                    key.cipher.algorithm === 'box'
-                      ? 'orange'
-                      : key.cipher.algorithm === 'sealedBox'
-                      ? 'green'
-                      : 'purple'
-                  }
+                <AlgorithmBadge algorithm={keys[0].algorithm as any} />
+                <NextLink href={`/keys/${name}`} passHref>
+                  <Link fontFamily="mono" fontSize="sm" mr="auto">
+                    {name}
+                  </Link>
+                </NextLink>
+                <Text
+                  as="span"
+                  fontSize="xs"
+                  color="gray.500"
+                  sx={{
+                    fontVariantNumeric: 'tabular-nums',
+                  }}
                 >
-                  {key.cipher.algorithm}
-                </Badge>
-                <Text fontFamily="mono" fontSize="sm">
-                  {key.name}
-                </Text>
-                <Text ml="auto" fontSize="xs" color="gray.500">
-                  {key.createdAt.toLocaleString(['se-SE'])}
+                  {keys[0].createdAt.toLocaleString(['se-SE'])}
                 </Text>
               </Flex>
             ))}
-            {identity && keys.length === 0 && (
+            {identity && Object.keys(keys).length === 0 && (
               <Center as={Stack} py={4} spacing={4}>
                 <Text fontSize="sm" color="gray.500">
                   Your keychain is empty
