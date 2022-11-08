@@ -4,27 +4,27 @@ import { z } from 'zod'
 import type { PostBanRequestBody } from '../api/ban.js'
 import type {
   GetMultipleIdentitiesResponseBody,
-  GetSingleIdentityResponseBody
+  GetSingleIdentityResponseBody,
 } from '../api/identity.js'
 import type {
   GetKeychainResponseBody,
-  PostKeychainItemRequestBody
+  PostKeychainItemRequestBody,
 } from '../api/keychain.js'
 import { loginResponseBody } from '../api/login.js'
 import type {
   PermissionFlags,
-  PostPermissionRequestBody
+  PostPermissionRequestBody,
 } from '../api/permissions.js'
 import type {
   GetSharedKeysResponseBody,
-  PostSharedKeyBody
+  PostSharedKeyBody,
 } from '../api/sharedKey.js'
 import type { SignupRequestBody } from '../api/signup.js'
 import { isFarFromCurrentTime } from '../time.js'
 import type { Optional } from '../types.js'
 import {
   sign as signClientRequest,
-  verify as verifyServerSignature
+  verify as verifyServerSignature,
 } from './auth.js'
 import {
   BoxCipher,
@@ -33,26 +33,26 @@ import {
   generateBoxCipher,
   memzeroCipher,
   SecretBoxCipher,
-  _serializeCipher
+  _serializeCipher,
 } from './ciphers.js'
 import { base64UrlDecode, base64UrlEncode } from './codec.js'
 import {
   decrypt,
   encodedCiphertextFormatV1,
   encrypt,
-  EncryptableJSONDataType
+  EncryptableJSONDataType,
 } from './encryption.js'
 import { fingerprint } from './hash.js'
 import {
   generateSignatureKeyPair,
   signHash,
-  verifySignedHash
+  verifySignedHash,
 } from './signHash.js'
 import type { Sodium } from './sodium.js'
 import {
   checkEncryptionPublicKey,
   checkSignaturePublicKey,
-  randomPad
+  randomPad,
 } from './utils.js'
 
 export type ClientConfig<KeyType = string> = {
@@ -104,11 +104,7 @@ const keychainItemMetadata = keychainItemSchema
     sharedBy: true,
   })
   .extend({
-    algorithm: z.union([
-      z.literal('box'),
-      z.literal('sealedBox'),
-      z.literal('secretBox'),
-    ]), // todo: Find better type
+    algorithm: z.literal(cipherParser._type[cipherParser.discriminator]),
     publicKey: z.string().optional(),
   })
 
@@ -166,7 +162,10 @@ const loadedStateSchema = z.object({
   keychain: keychainSchema,
 })
 
-const stateSchema = z.union([idleStateSchema, loadedStateSchema])
+const stateSchema = z.discriminatedUnion('state', [
+  idleStateSchema,
+  loadedStateSchema,
+])
 
 type State = z.infer<typeof stateSchema>
 

@@ -122,7 +122,7 @@ const secretBoxCipherParser = z.object({
   key: thirtyTwoBytesInBase64Parser,
 })
 
-export const cipherParser = z.union([
+export const cipherParser = z.discriminatedUnion('algorithm', [
   boxCipherParser,
   sealedBoxCipherParser,
   secretBoxCipherParser,
