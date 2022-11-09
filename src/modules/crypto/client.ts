@@ -67,6 +67,10 @@ type Config = Omit<ClientConfig<Key>, 'pollingInterval'> &
 
 // --
 
+const stringSchema = z.string()
+
+// --
+
 const keySchema = z.string().transform(base64UrlDecode)
 
 type Key = Uint8Array
@@ -659,7 +663,7 @@ export class Client {
     )
   }
 
-  public decrypt<Output>(ciphertext: string, keyName: string) {
+  public decrypt(ciphertext: string, keyName: string) {
     if (this.#state.state !== 'loaded') {
       throw new Error('Account is locked: cannot decrypt')
     }
@@ -669,7 +673,7 @@ export class Client {
     }
     for (const key of keys) {
       try {
-        return decrypt<Output>(
+        return decrypt(
           this.sodium,
           ciphertext,
           key.cipher,
@@ -726,21 +730,27 @@ export class Client {
       }
       // todo: Decryption error handling
       const item: KeychainItem = {
-        name: decrypt(
-          this.sodium,
-          lockedItem.name,
-          withPersonalKey,
-          encodedCiphertextFormatV1
+        name: stringSchema.parse(
+          decrypt(
+            this.sodium,
+            lockedItem.name,
+            withPersonalKey,
+            encodedCiphertextFormatV1
+          )
         ),
         nameFingerprint: lockedItem.nameFingerprint,
         cipher: cipherParser.parse(
           JSON.parse(
-            decrypt(
-              this.sodium,
-              lockedItem.payload,
-              withPersonalKey,
-              encodedCiphertextFormatV1
-            ).trim()
+            stringSchema
+              .parse(
+                decrypt(
+                  this.sodium,
+                  lockedItem.payload,
+                  withPersonalKey,
+                  encodedCiphertextFormatV1
+                )
+              )
+              .trim()
           )
         ),
         createdAt: new Date(lockedItem.createdAt),
@@ -807,21 +817,27 @@ export class Client {
           publicKey: this.decode(sharedKey.fromSharingPublicKey),
         }
         const item: KeychainItem = {
-          name: decrypt(
-            this.sodium,
-            sharedKey.name,
-            withSharedSecret,
-            encodedCiphertextFormatV1
+          name: stringSchema.parse(
+            decrypt(
+              this.sodium,
+              sharedKey.name,
+              withSharedSecret,
+              encodedCiphertextFormatV1
+            )
           ),
           nameFingerprint: sharedKey.nameFingerprint,
           cipher: cipherParser.parse(
             JSON.parse(
-              decrypt(
-                this.sodium,
-                sharedKey.payload,
-                withSharedSecret,
-                encodedCiphertextFormatV1
-              ).trim()
+              stringSchema
+                .parse(
+                  decrypt(
+                    this.sodium,
+                    sharedKey.payload,
+                    withSharedSecret,
+                    encodedCiphertextFormatV1
+                  )
+                )
+                .trim()
             )
           ),
           createdAt: new Date(sharedKey.createdAt),

@@ -1,4 +1,3 @@
-import type { StringOutputFormat } from 'libsodium-wrappers'
 import type { Sodium } from './sodium.js'
 
 export function concat(...items: Uint8Array[]) {
@@ -30,40 +29,6 @@ export function isEncryptable(
     ['string', 'number', 'boolean'].includes(typeof value) ||
     isUint8Array(value)
   )
-}
-
-export function encode(
-  sodium: Sodium,
-  input: Uint8Array,
-  format: StringOutputFormat
-) {
-  if (format === 'base64') {
-    return sodium.to_base64(input)
-  }
-  if (format === 'hex') {
-    return sodium.to_hex(input)
-  }
-  if (format === 'text') {
-    return sodium.to_string(input)
-  }
-  throw new Error(`Unsupported encoding format ${format}`)
-}
-
-export function decode(
-  sodium: Sodium,
-  input: string,
-  format: StringOutputFormat
-) {
-  if (format === 'base64') {
-    return sodium.from_base64(input)
-  }
-  if (format === 'hex') {
-    return sodium.from_hex(input)
-  }
-  if (format === 'text') {
-    return sodium.from_string(input)
-  }
-  throw new Error(`Unsupported encoding format ${format}`)
 }
 
 /**
@@ -137,4 +102,33 @@ export function randomPad(
   return input
     .padStart(outputLength - padEnd, paddingChar)
     .padEnd(outputLength, paddingChar)
+}
+
+export function numberToIEEE754Bytes(input: number) {
+  const buffer = new ArrayBuffer(8)
+  const f64 = new Float64Array(buffer)
+  f64[0] = input
+  return new Uint8Array(buffer)
+}
+
+export function ieee754BytesToNumber(bytes: Uint8Array) {
+  if (bytes.byteLength !== 8) {
+    return NaN
+  }
+  const f64 = new Float64Array(bytes.buffer)
+  return f64[0]
+}
+
+export function boolToByte(sodium: Sodium, input: boolean) {
+  const byte = sodium.randombytes_buf(1)
+  if (input) {
+    byte[0] |= 0x01 // set LSB
+  } else {
+    byte[0] &= 0xfe // clear LSB
+  }
+  return byte
+}
+
+export function byteToBool(byte: Uint8Array) {
+  return Boolean(byte[0] & 0x01)
 }

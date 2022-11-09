@@ -1,15 +1,14 @@
-import type {
-  StringOutputFormat,
-  Uint8ArrayOutputFormat,
-} from 'libsodium-wrappers'
+import type { Uint8ArrayOutputFormat } from 'libsodium-wrappers'
 import type { Cipher } from './ciphers.js'
 import type { Sodium } from './sodium.js'
 import {
+  boolToByte,
+  byteToBool,
   concat,
-  decode,
-  encode,
+  ieee754BytesToNumber,
   isEncryptable,
   isUint8Array,
+  numberToIEEE754Bytes,
   split,
 } from './utils.js'
 
@@ -18,7 +17,9 @@ import {
 export enum PayloadType {
   bin = 'bin', // Uint8Array
   txt = 'txt', // string
-  json = 'json', // number | boolean
+  num = 'num', // number
+  bool = 'bool', // boolean
+  json = 'json', // other
 }
 
 export const encodedCiphertextFormatV1 = 'application/e2esdk.ciphertext.v1'
@@ -40,7 +41,7 @@ export function encrypt<DataType extends Uint8Array | EncryptableJSONDataType>(
   sodium: Sodium,
   input: DataType,
   cipher: CipherWithOptionalNonce,
-  outputFormat?: StringOutputFormat | EncodedCiphertextFormat
+  outputFormat?: 'base64' | EncodedCiphertextFormat
 ): string
 
 /**
@@ -53,9 +54,9 @@ export function encrypt<DataType extends Uint8Array | EncryptableJSONDataType>(
  * @param cipher The algorithm to use and its parameters
  * @param outputFormat
  */
-export function encrypt<DataType extends Uint8Array | EncryptableJSONDataType>(
+export function encrypt(
   sodium: Sodium,
-  input: DataType,
+  input: Uint8Array,
   cipher: CipherWithOptionalNonce,
   outputFormat?: Uint8ArrayOutputFormat
 ): Uint8Array
@@ -66,7 +67,7 @@ export function encrypt<DataType extends Uint8Array | EncryptableJSONDataType>(
   cipher: CipherWithOptionalNonce,
   outputFormat:
     | Uint8ArrayOutputFormat
-    | StringOutputFormat
+    | 'base64'
     | EncodedCiphertextFormat = encodedCiphertextFormatV1
 ) {
   const { payloadType, payload } = isUint8Array(input)
@@ -78,6 +79,16 @@ export function encrypt<DataType extends Uint8Array | EncryptableJSONDataType>(
     ? {
         payloadType: PayloadType.txt,
         payload: sodium.from_string(input),
+      }
+    : typeof input === 'number'
+    ? {
+        payloadType: PayloadType.num,
+        payload: numberToIEEE754Bytes(input),
+      }
+    : typeof input === 'boolean'
+    ? {
+        payloadType: PayloadType.bool,
+        payload: boolToByte(sodium, input),
       }
     : {
         payloadType: PayloadType.json,
@@ -105,7 +116,7 @@ export function encrypt<DataType extends Uint8Array | EncryptableJSONDataType>(
     if (outputFormat === 'uint8array') {
       return concat(nonce, ciphertext)
     }
-    return encode(sodium, concat(nonce, ciphertext), outputFormat)
+    return sodium.to_base64(concat(nonce, ciphertext))
   }
 
   if (cipher.algorithm === 'sealedBox') {
@@ -122,7 +133,7 @@ export function encrypt<DataType extends Uint8Array | EncryptableJSONDataType>(
     if (outputFormat === 'uint8array') {
       return ciphertext
     }
-    return encode(sodium, ciphertext, outputFormat)
+    return sodium.to_base64(ciphertext)
   }
 
   if (cipher.algorithm === 'secretBox') {
@@ -141,7 +152,7 @@ export function encrypt<DataType extends Uint8Array | EncryptableJSONDataType>(
     if (outputFormat === 'uint8array') {
       return concat(nonce, ciphertext)
     }
-    return encode(sodium, concat(nonce, ciphertext), outputFormat)
+    return sodium.to_base64(concat(nonce, ciphertext))
   }
 }
 
@@ -157,33 +168,32 @@ export function decrypt(
   sodium: Sodium,
   input: string,
   cipher: Cipher,
-  inputEncoding: StringOutputFormat
+  inputEncoding: 'base64'
 ): Uint8Array
 
-export function decrypt<Output = any>(
+export function decrypt(
   sodium: Sodium,
   input: string,
   cipher: Cipher,
   inputEncoding: EncodedCiphertextFormat
-): Output
+): unknown
 
-export function decrypt<Output = any>(
+export function decrypt(
   sodium: Sodium,
   input: string | Uint8Array,
   cipher: Cipher,
-  inputEncoding?: StringOutputFormat | EncodedCiphertextFormat
+  inputEncoding?: 'base64' | EncodedCiphertextFormat
 ) {
   if (typeof input === 'string' && !inputEncoding) {
     throw new TypeError(
       'Missing required inputEncoding argument for string-encoded ciphertext'
     )
   }
-
   const payload = isUint8Array(input)
     ? input
     : inputEncoding === encodedCiphertextFormatV1
     ? input.split('.')
-    : decode(sodium, input, inputEncoding!)
+    : sodium.from_base64(input)
 
   if (payload[0] === 'v1' && payload[1] !== cipher.algorithm) {
     throw new Error(
@@ -201,7 +211,7 @@ export function decrypt<Output = any>(
       cipher.publicKey,
       cipher.privateKey
     )
-    return decodePayload<Output>(sodium, payload, plaintext)
+    return decodePayload(sodium, payload, plaintext)
   }
 
   if (cipher.algorithm === 'sealedBox') {
@@ -213,7 +223,7 @@ export function decrypt<Output = any>(
       cipher.publicKey,
       cipher.privateKey
     )
-    return decodePayload<Output>(sodium, payload, plaintext)
+    return decodePayload(sodium, payload, plaintext)
   }
 
   if (cipher.algorithm === 'secretBox') {
@@ -225,15 +235,15 @@ export function decrypt<Output = any>(
       nonce,
       cipher.key
     )
-    return decodePayload<Output>(sodium, payload, plaintext)
+    return decodePayload(sodium, payload, plaintext)
   }
 }
 
-function decodePayload<Output>(
+function decodePayload(
   sodium: Sodium,
   payload: Uint8Array | string[],
   plaintext: Uint8Array
-) {
+): unknown {
   if (isUint8Array(payload)) {
     return plaintext
   }
@@ -244,8 +254,14 @@ function decodePayload<Output>(
   if (payloadType === PayloadType.txt) {
     return sodium.to_string(plaintext)
   }
+  if (payloadType === PayloadType.num) {
+    return ieee754BytesToNumber(plaintext)
+  }
+  if (payloadType === PayloadType.bool) {
+    return byteToBool(plaintext)
+  }
   if (payloadType === PayloadType.json) {
-    return JSON.parse(sodium.to_string(plaintext).trim()) as Output
+    return JSON.parse(sodium.to_string(plaintext).trim())
   }
   throw new Error(`Unknown payload type ${payloadType}`)
 }
