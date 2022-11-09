@@ -96,19 +96,13 @@ const keychainItemSchema = z.object({
 
 type KeychainItem = z.infer<typeof keychainItemSchema>
 
-const keychainItemMetadata = keychainItemSchema
-  .pick({
-    name: true,
-    createdAt: true,
-    expiresAt: true,
-    sharedBy: true,
-  })
-  .extend({
-    algorithm: z.literal(cipherParser._type[cipherParser.discriminator]),
-    publicKey: z.string().optional(),
-  })
-
-type KeychainItemMetadata = z.infer<typeof keychainItemMetadata>
+type KeychainItemMetadata = Pick<
+  KeychainItem,
+  'name' | 'nameFingerprint' | 'createdAt' | 'expiresAt' | 'sharedBy'
+> & {
+  algorithm: z.infer<typeof cipherParser>['algorithm']
+  publicKey?: string
+}
 
 // --
 
@@ -463,6 +457,9 @@ export class Client {
     }
     const out: Record<string, KeychainItemMetadata[]> = {}
     this.#state.keychain.forEach(items => {
+      if (items.length === 0) {
+        return
+      }
       out[items[0][indexBy]] = items
         .map(({ cipher, ...item }) => {
           const publicKeyBuffer =
