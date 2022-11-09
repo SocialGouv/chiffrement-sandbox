@@ -1,7 +1,29 @@
 import { hash as blake2b } from '@stablelib/blake2b'
 import tweetnacl from 'tweetnacl'
+import { base64UrlEncode } from './codec'
 
-export function seal(input: Uint8Array, publicKey: Uint8Array) {
+// --
+
+export function sealBytes(input: Uint8Array, publicKey: Uint8Array) {
+  const ciphertext = seal(input, publicKey)
+  return ['v1', 'sealedBox', 'bin', base64UrlEncode(ciphertext)].join('.')
+}
+
+export function sealString(input: string, publicKey: Uint8Array) {
+  const cleartext = new TextEncoder().encode(input)
+  const ciphertext = seal(cleartext, publicKey)
+  return ['v1', 'sealedBox', 'txt', base64UrlEncode(ciphertext)].join('.')
+}
+
+export function sealJSON<T>(input: T, publicKey: Uint8Array) {
+  const cleartext = new TextEncoder().encode(JSON.stringify(input))
+  const ciphertext = seal(cleartext, publicKey)
+  return ['v1', 'sealedBox', 'json', base64UrlEncode(ciphertext)].join('.')
+}
+
+// --
+
+function seal(input: Uint8Array, publicKey: Uint8Array) {
   const ephemeralKeyPair = tweetnacl.box.keyPair()
 
   // Compute nonce as blake2b(ephemeral_pubKey || recipient_pubKey)
