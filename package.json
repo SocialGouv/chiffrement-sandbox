@@ -18,8 +18,8 @@
     "test:unit": "jest --coverage",
     "start": "NODE_ENV=production node ./build/server/main.js",
     "keygen": "zx ./scripts/keygen.mjs",
-    "db:start": "./scripts/db-start.sh",
-    "db:stop": "./scripts/db-stop.sh",
+    "db:start": "docker compose up --build",
+    "db:stop": "docker compose down",
     "db:migrations": "zx ./scripts/migrations.mjs"
   },
   "dependencies": {
