@@ -13,13 +13,13 @@ import React from 'react'
 import { useClient } from './ClientProvider'
 
 type UserIdentityProps = FormControlProps & {
-  label: string
+  label?: string
   identity: PublicUserIdentity | null
   onIdentityChange: (identity: PublicUserIdentity | null) => void
 }
 
 export const UserIdentity: React.FC<UserIdentityProps> = ({
-  label,
+  label = 'User ID',
   identity,
   onIdentityChange,
   ...props

@@ -1,12 +1,8 @@
 import {
   Checkbox,
   Flex,
-  FormControl,
-  FormHelperText,
-  FormLabel,
   Heading,
   Icon,
-  Input,
   SkeletonText,
   Stack,
   StackProps,
@@ -17,6 +13,7 @@ import { AlgorithmBadge } from 'client/components/AlgorithmBadge'
 import { useClient, useClientKeys } from 'client/components/ClientProvider'
 import { LoadingButton } from 'client/components/LoadingButton'
 import { NoSSR } from 'client/components/NoSSR'
+import { UserIdentity } from 'client/components/UserIdentity'
 import { APIError, PublicUserIdentity } from 'modules/crypto/client'
 import type { NextPage } from 'next'
 import { useRouter } from 'next/router'
@@ -27,11 +24,6 @@ const KeyPage: NextPage = () => {
   const keys = useClientKeys('nameFingerprint')
   const nameFingerprint = useRouter().query.nameFingerprint as string
   const revisions = keys[nameFingerprint] ?? []
-  console.dir({
-    nameFingerprint,
-    keys,
-    revisions,
-  })
   return (
     <NoSSR fallback={<SkeletonText />}>
       <>
@@ -54,7 +46,6 @@ const KeyPage: NextPage = () => {
             </Text>
           </Flex>
         </Stack>
-
         <Heading as="h2" fontSize="xl" mt={8}>
           Revisions
         </Heading>
@@ -113,7 +104,6 @@ export default KeyPage
 const Permissions: React.FC<StackProps> = props => {
   const client = useClient()
   const keyName = useRouter().query.name as string
-  const [userId, setUserId] = React.useState('')
   const [toUser, setToUser] = React.useState<PublicUserIdentity | null>(null)
   const [allowSharing, setAllowSharing] = React.useState(false)
   const [allowRotation, setAllowRotation] = React.useState(false)
@@ -123,24 +113,12 @@ const Permissions: React.FC<StackProps> = props => {
     position: 'bottom-right',
   })
 
-  const getRecipientIdentity = React.useCallback(async () => {
-    if (!userId.trim()) {
+  const onSubmit = React.useCallback(async () => {
+    if (!toUser) {
       return
     }
-    const identity = await client.getUserIdentity(userId)
-    if (!identity) {
-      toast({
-        status: 'warning',
-        title: 'Not found',
-        description: `Could not find an identity for user ID ${userId}`,
-      })
-    }
-    setToUser(identity)
-  }, [userId, client, toast])
-
-  const onSubmit = React.useCallback(async () => {
     try {
-      await client.setPermissions(userId, keyName, {
+      await client.setPermissions(toUser.userId, keyName, {
         allowSharing,
         allowRotation,
         allowDeletion,
@@ -167,7 +145,7 @@ const Permissions: React.FC<StackProps> = props => {
     }
   }, [
     client,
-    userId,
+    toUser,
     keyName,
     allowSharing,
     allowRotation,
@@ -178,19 +156,11 @@ const Permissions: React.FC<StackProps> = props => {
 
   return (
     <Stack spacing={4} {...props}>
-      <FormControl>
-        <FormLabel>User ID</FormLabel>
-        <Input
-          value={userId}
-          onChange={e => setUserId(e.target.value)}
-          onBlur={getRecipientIdentity}
-        />
-        {toUser && (
-          <FormHelperText>
-            Public key: {client.encode(toUser.signaturePublicKey)}
-          </FormHelperText>
-        )}
-      </FormControl>
+      <UserIdentity
+        label="User ID"
+        identity={toUser}
+        onIdentityChange={setToUser}
+      />
       <Checkbox
         isChecked={allowSharing}
         onChange={e => setAllowSharing(e.target.checked)}
@@ -225,34 +195,23 @@ const Permissions: React.FC<StackProps> = props => {
 const BanUser: React.FC<StackProps> = props => {
   const client = useClient()
   const keyName = useRouter().query.name as string
-  const [userId, setUserId] = React.useState('')
-  const [toUser, setToUser] = React.useState<PublicUserIdentity | null>(null)
+  const [identity, setIdentity] = React.useState<PublicUserIdentity | null>(
+    null
+  )
   const toast = useToast({
     position: 'bottom-right',
   })
 
-  const getRecipientIdentity = React.useCallback(async () => {
-    if (!userId.trim()) {
+  const onSubmit = React.useCallback(async () => {
+    if (!identity) {
       return
     }
-    const identity = await client.getUserIdentity(userId)
-    if (!identity) {
-      toast({
-        status: 'warning',
-        title: 'Not found',
-        description: `Could not find an identity for user ID ${userId}`,
-      })
-    }
-    setToUser(identity)
-  }, [userId, client, toast])
-
-  const onSubmit = React.useCallback(async () => {
     try {
-      await client.banUser(userId, keyName)
+      await client.banUser(identity.userId, keyName)
       toast({
         status: 'success',
         title: 'Ban successful',
-        description: `Access to ${keyName} has been revoked for ${userId}`,
+        description: `Access to ${keyName} has been revoked for ${identity.userId}`,
       })
     } catch (error) {
       if (error instanceof APIError) {
@@ -269,23 +228,15 @@ const BanUser: React.FC<StackProps> = props => {
         })
       }
     }
-  }, [client, userId, keyName, toast])
+  }, [client, identity, keyName, toast])
 
   return (
     <Stack spacing={4} {...props}>
-      <FormControl>
-        <FormLabel>User ID</FormLabel>
-        <Input
-          value={userId}
-          onChange={e => setUserId(e.target.value)}
-          onBlur={getRecipientIdentity}
-        />
-        {toUser && (
-          <FormHelperText>
-            Public key: {client.encode(toUser.signaturePublicKey)}
-          </FormHelperText>
-        )}
-      </FormControl>
+      <UserIdentity
+        label="User ID"
+        identity={identity}
+        onIdentityChange={setIdentity}
+      />
       <LoadingButton leftIcon={<FiUserX />} onClick={onSubmit}>
         Ban user
       </LoadingButton>
