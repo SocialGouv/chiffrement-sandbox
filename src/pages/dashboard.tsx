@@ -21,7 +21,7 @@ import { FiLogIn, FiPlusCircle } from 'react-icons/fi'
 
 const DashboardPage: NextPage = () => {
   const identity = useClientIdentity()
-  const keys = useClientKeys()
+  const keys = useClientKeys('nameFingerprint')
   return (
     <>
       <Heading as="h1">Dashboard</Heading>
@@ -57,16 +57,16 @@ const DashboardPage: NextPage = () => {
                 Keys
               </Heading>
             )}
-            {Object.entries(keys).map(([name, keys]) => (
+            {Object.entries(keys).map(([nameFingerprint, keys]) => (
               <Flex
                 key={name + keys[0]?.createdAt.toISOString()}
                 gap={4}
                 alignItems="center"
               >
                 <AlgorithmBadge algorithm={keys[0].algorithm as any} />
-                <NextLink href={`/keys/${name}`} passHref>
+                <NextLink href={`/keys/${nameFingerprint}`} passHref>
                   <Link fontFamily="mono" fontSize="sm" mr="auto">
-                    {name}
+                    {keys[0].name}
                   </Link>
                 </NextLink>
                 <Text

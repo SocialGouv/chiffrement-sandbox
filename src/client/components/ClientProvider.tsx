@@ -1,5 +1,10 @@
+import { useToast } from '@chakra-ui/react'
 import React from 'react'
-import { Client, PublicUserIdentity } from '../../modules/crypto/client.js'
+import {
+  APIError,
+  Client,
+  PublicUserIdentity,
+} from '../../modules/crypto/client.js'
 import { sodium } from '../../modules/crypto/sodium.js'
 
 const client = new Client(sodium, {
@@ -49,4 +54,50 @@ export function useClientKeys(indexBy: 'name' | 'nameFingerprint' = 'name') {
     )
   }, [client, indexBy])
   return keys
+}
+
+export function useShareKey() {
+  const client = useClient()
+  const toast = useToast({
+    position: 'bottom-right',
+  })
+
+  return React.useCallback(
+    async (keyName: string | null, to: PublicUserIdentity | null) => {
+      if (!keyName || !to) {
+        return
+      }
+      try {
+        await client.shareKey(keyName, to)
+        toast({
+          status: 'success',
+          title: 'Key shared',
+          description: `Key ${keyName} was sent to ${to.userId}`,
+        })
+      } catch (error) {
+        if (error instanceof APIError) {
+          if (error.statusCode === 409) {
+            toast({
+              status: 'info',
+              title: 'Not needed',
+              description: error.message,
+            })
+          } else {
+            toast({
+              status: 'error',
+              title: error.statusText,
+              description: error.message,
+            })
+          }
+        } else {
+          toast({
+            status: 'error',
+            title: (error as any).name,
+            description: (error as any).message ?? String(error),
+          })
+        }
+      }
+    },
+    [client, toast]
+  )
 }

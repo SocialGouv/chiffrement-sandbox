@@ -24,23 +24,40 @@ import React from 'react'
 import { FiCheckSquare, FiLock, FiUserX } from 'react-icons/fi'
 
 const KeyPage: NextPage = () => {
-  const keys = useClientKeys()
-  const keyName = useRouter().query.name as string
-  const revisions = keys[keyName] ?? []
+  const keys = useClientKeys('nameFingerprint')
+  const nameFingerprint = useRouter().query.nameFingerprint as string
+  const revisions = keys[nameFingerprint] ?? []
+  console.dir({
+    nameFingerprint,
+    keys,
+    revisions,
+  })
   return (
     <NoSSR fallback={<SkeletonText />}>
       <>
         <Heading as="h1" fontSize="2xl" fontFamily="mono" mt={8}>
-          {keyName}
+          {revisions[0]?.name}
         </Heading>
-        <Flex justifyContent="space-between" alignItems="baseline">
-          <Heading as="h2" fontSize="xl" mt={8}>
-            Revisions
-          </Heading>
-          {revisions[0] && (
-            <AlgorithmBadge algorithm={revisions[0].algorithm} />
-          )}
-        </Flex>
+        <Stack my={4}>
+          <Flex alignItems="center">
+            <Text fontSize="sm" fontWeight="semibold">
+              Algorithm
+            </Text>
+            <AlgorithmBadge algorithm={revisions[0]?.algorithm} ml="auto" />
+          </Flex>
+          <Flex alignItems="baseline">
+            <Text fontSize="sm" fontWeight="semibold">
+              Fingerprint
+            </Text>
+            <Text fontFamily="mono" fontSize="sm" ml="auto">
+              {nameFingerprint}
+            </Text>
+          </Flex>
+        </Stack>
+
+        <Heading as="h2" fontSize="xl" mt={8}>
+          Revisions
+        </Heading>
         <Stack mt={4}>
           {revisions.map((key, index) => (
             <Flex

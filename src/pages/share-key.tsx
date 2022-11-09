@@ -3,80 +3,26 @@ import {
   FormHelperText,
   FormLabel,
   Heading,
-  Input,
   Select,
   Stack,
-  useToast,
 } from '@chakra-ui/react'
-import { useClient, useClientKeys } from 'client/components/ClientProvider'
+import { useClientKeys, useShareKey } from 'client/components/ClientProvider'
 import { LoadingButton } from 'client/components/LoadingButton'
 import { NoSSR } from 'client/components/NoSSR'
-import { APIError, PublicUserIdentity } from 'modules/crypto/client'
+import { UserIdentity } from 'client/components/UserIdentity'
+import { PublicUserIdentity } from 'modules/crypto/client'
 import type { NextPage } from 'next'
 import React from 'react'
 import { FiShare2 } from 'react-icons/fi'
 
 const ShareKeyPage: NextPage = () => {
   const [keyName, setKeyName] = React.useState('')
-  const [toUserId, setToUserId] = React.useState('')
-  const [toUser, setToUser] = React.useState<PublicUserIdentity | null>(null)
   const keys = useClientKeys()
-  const client = useClient()
   const key = keys[keyName]?.[0]
-  const toast = useToast({
-    position: 'bottom-right',
-  })
-
-  const getRecipientIdentity = React.useCallback(async () => {
-    if (!toUserId.trim()) {
-      return
-    }
-    const identity = await client.getUserIdentity(toUserId)
-    if (!identity) {
-      toast({
-        status: 'warning',
-        title: 'Not found',
-        description: `Could not find an identity for user ID ${toUserId}`,
-      })
-    }
-    setToUser(identity)
-  }, [toUserId, client, toast])
-
-  const shareKey = React.useCallback(async () => {
-    if (!keyName || !toUser) {
-      return
-    }
-    try {
-      await client.shareKey(keyName, toUser)
-      toast({
-        status: 'success',
-        title: 'Key shared',
-        description: `Key ${keyName} was sent to ${toUser.userId}`,
-      })
-    } catch (error) {
-      if (error instanceof APIError) {
-        if (error.statusCode === 409) {
-          toast({
-            status: 'info',
-            title: 'Not needed',
-            description: error.message,
-          })
-        } else {
-          toast({
-            status: 'error',
-            title: error.statusText,
-            description: error.message,
-          })
-        }
-      } else {
-        toast({
-          status: 'error',
-          title: (error as any).name,
-          description: (error as any).message ?? String(error),
-        })
-      }
-    }
-  }, [client, keyName, toUser, toast])
+  const [toUser, setToUserIdentity] = React.useState<PublicUserIdentity | null>(
+    null
+  )
+  const shareKey = useShareKey()
 
   return (
     <>
@@ -104,20 +50,15 @@ const ShareKeyPage: NextPage = () => {
             </FormHelperText>
           )}
         </FormControl>
-        <FormControl>
-          <FormLabel>Share with</FormLabel>
-          <Input
-            value={toUserId}
-            onChange={e => setToUserId(e.target.value)}
-            onBlur={getRecipientIdentity}
-          />
-          {toUser && (
-            <FormHelperText>
-              Public key: {client.encode(toUser.signaturePublicKey)}
-            </FormHelperText>
-          )}
-        </FormControl>
-        <LoadingButton onClick={shareKey} leftIcon={<FiShare2 />}>
+        <UserIdentity
+          label="Share with"
+          identity={toUser}
+          onIdentityChange={setToUserIdentity}
+        />
+        <LoadingButton
+          onClick={() => shareKey(keyName, toUser)}
+          leftIcon={<FiShare2 />}
+        >
           Share
         </LoadingButton>
       </Stack>
