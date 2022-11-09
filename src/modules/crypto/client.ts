@@ -381,7 +381,7 @@ export class Client {
   }: Optional<
     Omit<KeychainItem, 'nameFingerprint'>,
     'createdAt' | 'expiresAt' | 'sharedBy'
-  >) {
+  >): Promise<KeychainItemMetadata> {
     await this.sodium.ready
     if (this.#state.state !== 'loaded') {
       throw new Error('Account is locked')
@@ -449,6 +449,18 @@ export class Client {
     })
     this.#mitt.emit('keychainUpdated', null)
     this.#sync.setState(this.#state)
+    return {
+      name,
+      nameFingerprint,
+      algorithm: cipher.algorithm,
+      publicKey:
+        cipher.algorithm !== 'secretBox'
+          ? this.encode(cipher.publicKey)
+          : undefined,
+      createdAt,
+      expiresAt,
+      sharedBy,
+    }
   }
 
   public getKeysBy(indexBy: 'name' | 'nameFingerprint') {

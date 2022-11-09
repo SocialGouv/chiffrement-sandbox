@@ -10,5 +10,5 @@ export function hashItems(sodium: Sodium, ...items: Uint8Array[]) {
 }
 
 export function fingerprint(sodium: Sodium, input: string | Uint8Array) {
-  return sodium.crypto_hash(input, 'base64')
+  return sodium.crypto_generichash(32, input, null, 'base64')
 }
