@@ -88,7 +88,7 @@ export function encrypt<DataType extends Uint8Array | EncryptableJSONDataType>(
     : typeof input === 'boolean'
     ? {
         payloadType: PayloadType.bool,
-        payload: boolToByte(sodium, input),
+        payload: boolToByte(input),
       }
     : {
         payloadType: PayloadType.json,

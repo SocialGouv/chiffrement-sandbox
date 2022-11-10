@@ -40,6 +40,20 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
   const client = useClient()
   const identity = useClientIdentity()
   const router = useRouter()
+  if (router.asPath.startsWith('/contact-form')) {
+    return (
+      <Container maxW="5xl" my={8}>
+        {children}
+      </Container>
+    )
+  }
+
+  const containerWidth =
+    router.asPath.startsWith('/app/contact-forms/') &&
+    !router.asPath.endsWith('/new')
+      ? '8xl'
+      : '2xl'
+
   return (
     <>
       <Flex
@@ -149,7 +163,7 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
           </Menu>
         </Stack>
       </Flex>
-      <Container maxW="2xl" my={8}>
+      <Container maxW={containerWidth} my={8}>
         {children}
       </Container>
     </>

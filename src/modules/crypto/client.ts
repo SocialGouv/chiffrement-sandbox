@@ -100,7 +100,7 @@ const keychainItemSchema = z.object({
 
 type KeychainItem = z.infer<typeof keychainItemSchema>
 
-type KeychainItemMetadata = Pick<
+export type KeychainItemMetadata = Pick<
   KeychainItem,
   'name' | 'nameFingerprint' | 'createdAt' | 'expiresAt' | 'sharedBy'
 > & {

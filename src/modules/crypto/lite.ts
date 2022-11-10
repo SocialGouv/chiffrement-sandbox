@@ -1,6 +1,7 @@
 import { hash as blake2b } from '@stablelib/blake2b'
 import tweetnacl from 'tweetnacl'
 import { base64UrlEncode } from './codec'
+import { boolToByte, numberToIEEE754Bytes } from './utils'
 
 // --
 
@@ -13,6 +14,18 @@ export function sealString(input: string, publicKey: Uint8Array) {
   const cleartext = new TextEncoder().encode(input)
   const ciphertext = _seal(cleartext, publicKey)
   return ['v1', 'sealedBox', 'txt', base64UrlEncode(ciphertext)].join('.')
+}
+
+export function sealNumber(input: number, publicKey: Uint8Array) {
+  const cleartext = numberToIEEE754Bytes(input)
+  const ciphertext = _seal(cleartext, publicKey)
+  return ['v1', 'sealedBox', 'num', base64UrlEncode(ciphertext)].join('.')
+}
+
+export function sealBoolean(input: boolean, publicKey: Uint8Array) {
+  const cleartext = boolToByte(input)
+  const ciphertext = _seal(cleartext, publicKey)
+  return ['v1', 'sealedBox', 'bool', base64UrlEncode(ciphertext)].join('.')
 }
 
 export function sealJSON<T>(input: T, publicKey: Uint8Array) {

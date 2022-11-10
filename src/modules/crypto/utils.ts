@@ -119,8 +119,9 @@ export function ieee754BytesToNumber(bytes: Uint8Array) {
   return f64[0]
 }
 
-export function boolToByte(sodium: Sodium, input: boolean) {
-  const byte = sodium.randombytes_buf(1)
+export function boolToByte(input: boolean) {
+  const byte = new Uint8Array(1)
+  crypto.getRandomValues(byte)
   if (input) {
     byte[0] |= 0x01 // set LSB
   } else {
