@@ -1,4 +1,5 @@
 import {
+  Box,
   Button,
   Center,
   Heading,
@@ -27,14 +28,30 @@ const ContactFormsPage: NextPage = () => {
             </NextLink>
           </Center>
         ) : (
-          <Stack spacing={4}>
+          <Stack spacing={6}>
             {buckets.map(({ name, submissionBucketId }) => (
               <NextLink
                 key={submissionBucketId}
                 href={`/app/contact-forms/${submissionBucketId}`}
                 passHref
               >
-                <Link>{name.replace(/^contact-form:/, '')}</Link>
+                <Box
+                  as={Link}
+                  borderWidth="1px"
+                  rounded="md"
+                  shadow="md"
+                  px={4}
+                  py={3}
+                  _hover={{
+                    textDecoration: 'none',
+                    shadow: 'lg',
+                  }}
+                >
+                  <Heading as="h2" fontSize="xl">
+                    {' '}
+                    {name.replace(/^contact-form:/, '')}
+                  </Heading>
+                </Box>
               </NextLink>
             ))}
             <NextLink href="/app/contact-forms/new" passHref>

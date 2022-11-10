@@ -65,11 +65,11 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
         rowGap={2}
         {...props}
       >
-        <NextLink href="/dashboard" passHref>
+        <NextLink href="/app/contact-forms" passHref>
           <Link>
             <Text fontWeight="semibold">
               <Icon as={MdOutlineLock} mr={1} transform="translateY(2px)" />
-              e2e SDK
+              e2e SDK Demo
             </Text>
           </Link>
         </NextLink>

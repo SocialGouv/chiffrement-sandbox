@@ -1,12 +1,21 @@
 import {
+  Button,
   Center,
+  Divider,
   FormControl,
   FormHelperText,
   FormLabel,
   Heading,
   Icon,
-  Input,
   Link,
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay,
+  Spinner,
   Table,
   TableContainer,
   Tbody,
@@ -15,14 +24,18 @@ import {
   Th,
   Thead,
   Tr,
+  useDisclosure,
 } from '@chakra-ui/react'
 import { useQuery } from '@tanstack/react-query'
 import { useClient, useClientKeys } from 'client/components/ClientProvider'
+import { CopiableReadOnlyInput } from 'client/components/CopiableReadOnlyInput'
+import { NoSSR } from 'client/components/NoSSR'
 import request, { gql } from 'graphql-request'
 import { KeychainItemMetadata } from 'modules/crypto/client'
 import type { NextPage } from 'next'
 import { useRouter } from 'next/router'
-import { FiCheck } from 'react-icons/fi'
+import React from 'react'
+import { FiCheck, FiMail, FiPhone } from 'react-icons/fi'
 import { z } from 'zod'
 
 const formSchema = z.object({
@@ -58,9 +71,19 @@ const ContactFormResultsPage: NextPage = () => {
   const allKeys = useClientKeys('nameFingerprint')
   const currentKey = allKeys[submissionBucketId]?.[0] ?? null
   const submissions = useContactFormSubmissions(currentKey)
+  if (!currentKey) {
+    return (
+      <Center minH="xs">
+        <NoSSR fallback={<Spinner />}>No key available for this form</NoSSR>
+      </Center>
+    )
+  }
   return (
     <>
-      <Heading as="h1">Contact submissions</Heading>
+      <Heading as="h1">{currentKey.name.replace(/^contact-form:/, '')}</Heading>
+      <Text fontSize="sm" color="gray.500">
+        Contact form submissions
+      </Text>
       {(submissions.data?.length ?? 0) === 0 ? (
         <Center minH="2xs">No data available yet.</Center>
       ) : (
@@ -80,55 +103,7 @@ const ContactFormResultsPage: NextPage = () => {
             </Thead>
             <Tbody>
               {(submissions.data ?? []).map(submission => (
-                <Tr key={submission.id}>
-                  <Td>
-                    {submission.firstName} {submission.lastName}
-                  </Td>
-                  <Td
-                    maxW="2xs"
-                    overflow="hidden"
-                    textOverflow="ellipsis"
-                    whiteSpace="nowrap"
-                  >
-                    {submission.subject}
-                  </Td>
-                  <Td
-                    maxW="xs"
-                    overflow="hidden"
-                    textOverflow="ellipsis"
-                    whiteSpace="nowrap"
-                  >
-                    {submission.message}
-                  </Td>
-                  <Td isNumeric>{submission.age ?? <NotAvailable />}</Td>
-                  <Td textAlign="center">
-                    {submission.contactMe && (
-                      <Icon as={FiCheck} aria-label="yes" color="green.500" />
-                    )}
-                  </Td>
-                  <Td>
-                    {submission.email ? (
-                      <Link href={`mailto:${submission.email}`}>
-                        {submission.email}
-                      </Link>
-                    ) : (
-                      <NotAvailable />
-                    )}
-                  </Td>
-                  <Td>
-                    {submission.phoneNumber ? (
-                      <Link href={`tel:${submission.phoneNumber}`}>
-                        {submission.phoneNumber}
-                      </Link>
-                    ) : (
-                      <NotAvailable />
-                    )}
-                  </Td>
-
-                  <Td color="gray.500">
-                    {submission.createdAt.toLocaleString(['se-SE'])}
-                  </Td>
-                </Tr>
+                <TableRow key={submission.id} data={submission} />
               ))}
             </Tbody>
           </Table>
@@ -137,7 +112,7 @@ const ContactFormResultsPage: NextPage = () => {
 
       <FormControl mt={12}>
         <FormLabel>Public URL</FormLabel>
-        <Input
+        <CopiableReadOnlyInput
           value={`${process.env.NEXT_PUBLIC_DEPLOYMENT_URL}/contact-form/${submissionBucketId}#${currentKey?.publicKey}`}
         />
         <FormHelperText>
@@ -147,6 +122,10 @@ const ContactFormResultsPage: NextPage = () => {
     </>
   )
 }
+
+export default ContactFormResultsPage
+
+// --
 
 const NotAvailable = () => {
   return (
@@ -160,7 +139,125 @@ const NotAvailable = () => {
   )
 }
 
-export default ContactFormResultsPage
+// --
+
+type TableRowProps = {
+  data: z.infer<typeof formWithMetadata>
+}
+
+const TableRow: React.FC<TableRowProps> = ({ data }) => {
+  const { isOpen, onOpen, onClose } = useDisclosure()
+  return (
+    <>
+      <Tr
+        _hover={{
+          background: 'gray.50',
+          _dark: {
+            background: 'gray.900',
+          },
+        }}
+        onClick={onOpen}
+        cursor="pointer"
+      >
+        <Td>
+          {data.firstName} {data.lastName}
+        </Td>
+        <Td
+          maxW="2xs"
+          overflow="hidden"
+          textOverflow="ellipsis"
+          whiteSpace="nowrap"
+        >
+          {data.subject}
+        </Td>
+        <Td
+          maxW="xs"
+          overflow="hidden"
+          textOverflow="ellipsis"
+          whiteSpace="nowrap"
+        >
+          {data.message}
+        </Td>
+        <Td isNumeric>{data.age ?? <NotAvailable />}</Td>
+        <Td textAlign="center">
+          {data.contactMe && (
+            <Icon as={FiCheck} aria-label="yes" color="green.500" />
+          )}
+        </Td>
+        <Td>
+          {data.email ? (
+            <Link href={`mailto:${data.email}`}>{data.email}</Link>
+          ) : (
+            <NotAvailable />
+          )}
+        </Td>
+        <Td>
+          {data.phoneNumber ? (
+            <Link href={`tel:${data.phoneNumber}`}>{data.phoneNumber}</Link>
+          ) : (
+            <NotAvailable />
+          )}
+        </Td>
+        <Td color="gray.500" fontSize="xs">
+          {data.createdAt.toLocaleString(['se-SE'])}
+        </Td>
+      </Tr>
+      <Modal isOpen={isOpen} onClose={onClose}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>{data.subject}</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <Text fontWeight="semibold">
+              {data.firstName} {data.lastName}{' '}
+              {Boolean(data.age) && (
+                <Text
+                  as="span"
+                  fontWeight="normal"
+                  fontSize="sm"
+                  color="gray.500"
+                >
+                  • {data.age} years old
+                </Text>
+              )}
+            </Text>
+            <Text fontSize="sm" color="gray.500">
+              {data.createdAt.toLocaleString(['se-SE'])}
+            </Text>
+            <Divider my={4} />
+            <Text whiteSpace="pre-wrap">{data.message}</Text>
+          </ModalBody>
+          <ModalFooter gap={4}>
+            {data.contactMe && data.email && (
+              <Button
+                as={Link}
+                _hover={{
+                  textDecoration: 'none',
+                }}
+                href={`mailto:${data.email}`}
+                leftIcon={<FiMail />}
+              >
+                Send email
+              </Button>
+            )}
+            {data.contactMe && data.phoneNumber && (
+              <Button
+                as={Link}
+                _hover={{
+                  textDecoration: 'none',
+                }}
+                href={`tel:${data.phoneNumber}`}
+                leftIcon={<FiPhone />}
+              >
+                Call
+              </Button>
+            )}
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+    </>
+  )
+}
 
 // --
 
