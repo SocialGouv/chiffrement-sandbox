@@ -40,11 +40,31 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
   const client = useClient()
   const identity = useClientIdentity()
   const router = useRouter()
+
   if (router.asPath.startsWith('/contact-form')) {
     return (
-      <Container maxW="5xl" my={8}>
-        {children}
-      </Container>
+      <>
+        <Flex
+          as="header"
+          py={2}
+          px={4}
+          gap={2}
+          justifyContent="space-between"
+          alignItems="center"
+          flexWrap="wrap"
+          rowGap={2}
+        >
+          <Text fontWeight="semibold">
+            <Icon as={MdOutlineLock} mr={1} transform="translateY(2px)" />
+            e2e SDK Demo
+          </Text>
+          <ColorModeSwitch />
+        </Flex>
+
+        <Container maxW="5xl" my={8}>
+          {children}
+        </Container>
+      </>
     )
   }
 

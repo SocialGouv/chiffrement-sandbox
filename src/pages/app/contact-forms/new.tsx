@@ -7,6 +7,7 @@ import {
   FormLabel,
   Heading,
   Input,
+  Link,
   Stack,
   StackProps,
 } from '@chakra-ui/react'
@@ -20,6 +21,7 @@ import type { NextPage } from 'next'
 import NextLink from 'next/link'
 
 import React from 'react'
+import { FiArrowRight, FiShare2 } from 'react-icons/fi'
 
 type ContactFormMetadata = {
   submissionBucketId: string
@@ -69,10 +71,21 @@ const NewContactFormPage: NextPage = () => {
             People will use this link to contact you
           </FormHelperText>
         </FormControl>
-        <Divider mt={12} mb={10} />
-        <ShareAccess keyName={keyName} />
+
+        <ShareAccess keyName={keyName} mt={8} />
+        <Divider my={12} />
         <NextLink href={resultsURL ?? '#'} passHref>
-          <Button as="a">Submissions</Button>
+          <Button
+            as={Link}
+            w="100%"
+            colorScheme="green"
+            leftIcon={<FiArrowRight />}
+            _hover={{
+              textDecoration: 'none',
+            }}
+          >
+            Go to submissions
+          </Button>
         </NextLink>
       </Collapse>
     </>
@@ -87,7 +100,10 @@ type ShareAccessProps = StackProps & {
   keyName: string
 }
 
-const ShareAccess: React.FC<ShareAccessProps> = ({ keyName, ...props }) => {
+export const ShareAccess: React.FC<ShareAccessProps> = ({
+  keyName,
+  ...props
+}) => {
   const [to, setTo] = React.useState<PublicUserIdentity | null>(null)
   const shareKey = useShareKey()
   return (
@@ -95,8 +111,11 @@ const ShareAccess: React.FC<ShareAccessProps> = ({ keyName, ...props }) => {
       <Heading as="h2" fontSize="2xl">
         Share access
       </Heading>
-      <UserIdentity identity={to} onIdentityChange={setTo} label="With" />
-      <LoadingButton onClick={() => shareKey(keyName, to)}>
+      <UserIdentity identity={to} onIdentityChange={setTo} />
+      <LoadingButton
+        onClick={() => shareKey(keyName, to)}
+        leftIcon={<FiShare2 />}
+      >
         Share access
       </LoadingButton>
     </Stack>

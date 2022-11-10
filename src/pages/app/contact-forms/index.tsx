@@ -6,6 +6,7 @@ import {
   Link,
   SkeletonText,
   Stack,
+  Text,
 } from '@chakra-ui/react'
 import { useClientKeys } from 'client/components/ClientProvider'
 import { NoSSR } from 'client/components/NoSSR'
@@ -21,8 +22,10 @@ const ContactFormsPage: NextPage = () => {
       </Heading>
       <NoSSR fallback={<SkeletonText />}>
         {buckets.length === 0 ? (
-          <Center>
-            Create your first contact form:
+          <Center flexDirection="column" gap={4}>
+            <Text fontSize="sm" color="gray.500">
+              Create your first contact form:
+            </Text>
             <NextLink href="/app/contact-forms/new" passHref>
               <Button as="a">Create contact form</Button>
             </NextLink>

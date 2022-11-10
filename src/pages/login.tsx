@@ -23,7 +23,7 @@ const LoginPage: NextPage = () => {
   const client = useClient()
   const login = React.useCallback(async () => {
     await client.login(userId, client.decode(personalKey))
-    await router.push('/dashboard')
+    await router.push('/app/contact-forms')
   }, [userId, personalKey, client, router])
 
   return (

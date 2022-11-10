@@ -37,6 +37,7 @@ import { useRouter } from 'next/router'
 import React from 'react'
 import { FiCheck, FiMail, FiPhone } from 'react-icons/fi'
 import { z } from 'zod'
+import { ShareAccess } from './new'
 
 const formSchema = z.object({
   subject: z.string(),
@@ -113,12 +114,13 @@ const ContactFormResultsPage: NextPage = () => {
       <FormControl mt={12}>
         <FormLabel>Public URL</FormLabel>
         <CopiableReadOnlyInput
-          value={`${process.env.NEXT_PUBLIC_DEPLOYMENT_URL}/contact-form/${submissionBucketId}#${currentKey?.publicKey}`}
+          value={`${process.env.NEXT_PUBLIC_DEPLOYMENT_URL}/contact-form/${submissionBucketId}#${currentKey.publicKey}`}
         />
         <FormHelperText>
           Anyone with this URL will be able to contact you
         </FormHelperText>
       </FormControl>
+      <ShareAccess keyName={currentKey.name} mt={8} />
     </>
   )
 }
