@@ -53,8 +53,10 @@ const ContactFormPage: NextPage = () => {
     register,
     handleSubmit,
     watch,
+    formState: { isSubmitting },
     reset: resetForm,
   } = useForm<FormValues>()
+
   const router = useRouter()
   const submissionBucketId = router.query.submissionBucketId as string
   const toast = useToast({
@@ -167,7 +169,12 @@ const ContactFormPage: NextPage = () => {
                 {...register('message')}
               />
             </FormControl>
-            <Button type="submit" leftIcon={<FiSend />} colorScheme="green">
+            <Button
+              type="submit"
+              leftIcon={<FiSend />}
+              colorScheme="green"
+              isLoading={isSubmitting}
+            >
               Submit
             </Button>
           </Stack>
