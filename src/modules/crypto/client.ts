@@ -87,6 +87,7 @@ const keyPairSchema = z.object({
 const keychainItemSchema = z.object({
   name: z.string(),
   nameFingerprint: z.string(),
+  payloadFingerprint: z.string(),
   cipher: z
     .string()
     .transform(input => cipherParser.parse(JSON.parse(input.trim()))),
@@ -102,7 +103,12 @@ type KeychainItem = z.infer<typeof keychainItemSchema>
 
 export type KeychainItemMetadata = Pick<
   KeychainItem,
-  'name' | 'nameFingerprint' | 'createdAt' | 'expiresAt' | 'sharedBy'
+  | 'name'
+  | 'nameFingerprint'
+  | 'payloadFingerprint'
+  | 'createdAt'
+  | 'expiresAt'
+  | 'sharedBy'
 > & {
   algorithm: z.infer<typeof cipherParser>['algorithm']
   publicKey?: string
@@ -383,7 +389,7 @@ export class Client {
     expiresAt = null,
     sharedBy = null,
   }: Optional<
-    Omit<KeychainItem, 'nameFingerprint'>,
+    Omit<KeychainItem, 'nameFingerprint' | 'payloadFingerprint'>,
     'createdAt' | 'expiresAt' | 'sharedBy'
   >): Promise<KeychainItemMetadata> {
     await this.sodium.ready
@@ -446,6 +452,7 @@ export class Client {
     addToKeychain(this.#state.keychain, {
       name,
       nameFingerprint,
+      payloadFingerprint,
       cipher,
       createdAt,
       expiresAt,
@@ -456,6 +463,7 @@ export class Client {
     return {
       name,
       nameFingerprint,
+      payloadFingerprint,
       algorithm: cipher.algorithm,
       publicKey:
         cipher.algorithm !== 'secretBox'
@@ -739,6 +747,7 @@ export class Client {
           )
         ),
         nameFingerprint: lockedItem.nameFingerprint,
+        payloadFingerprint: lockedItem.payloadFingerprint,
         cipher: cipherParser.parse(
           JSON.parse(
             stringSchema
@@ -757,13 +766,13 @@ export class Client {
         expiresAt: lockedItem.expiresAt ? new Date(lockedItem.expiresAt) : null,
         sharedBy: lockedItem.sharedBy,
       }
-      if (fingerprint(this.sodium, item.name) !== lockedItem.nameFingerprint) {
+      if (fingerprint(this.sodium, item.name) !== item.nameFingerprint) {
         console.warn('Invalid name fingerprint:', lockedItem)
         continue
       }
       if (
         fingerprint(this.sodium, _serializeCipher(item.cipher)) !==
-        lockedItem.payloadFingerprint
+        item.payloadFingerprint
       ) {
         console.warn('Invalid payload fingerprint', lockedItem)
         continue
@@ -826,6 +835,7 @@ export class Client {
             )
           ),
           nameFingerprint: sharedKey.nameFingerprint,
+          payloadFingerprint: sharedKey.payloadFingerprint,
           cipher: cipherParser.parse(
             JSON.parse(
               stringSchema
@@ -845,12 +855,12 @@ export class Client {
           sharedBy: sharedKey.fromUserId,
         }
         // Verify fingerprints
-        if (fingerprint(this.sodium, item.name) !== sharedKey.nameFingerprint) {
+        if (fingerprint(this.sodium, item.name) !== item.nameFingerprint) {
           throw new Error('Invalid shared key name fingerprint')
         }
         if (
-          fingerprint(this.sodium, _serializeCipher(item.cipher).trim()) !==
-          sharedKey.payloadFingerprint
+          fingerprint(this.sodium, _serializeCipher(item.cipher)) !==
+          item.payloadFingerprint
         ) {
           throw new Error('Invalid shared key payload fingerprint')
         }
