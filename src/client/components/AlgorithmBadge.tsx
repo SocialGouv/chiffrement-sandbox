@@ -13,6 +13,7 @@ export const AlgorithmBadge: React.FC<AlgorithmBadgeProps> = ({
   return (
     <Badge
       w="4.5rem"
+      h="1.2rem"
       textTransform="none"
       textAlign="center"
       colorScheme={
