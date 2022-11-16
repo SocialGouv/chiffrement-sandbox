@@ -92,7 +92,6 @@ export const E2ESdkDevtools: React.FC = ({ ...props }) => {
               </TabList>
             </DrawerHeader>
             <DrawerBody
-              px={2}
               pt={0}
               pb={4}
               overflow="auto"
@@ -101,7 +100,7 @@ export const E2ESdkDevtools: React.FC = ({ ...props }) => {
             >
               {identity ? (
                 <TabPanels>
-                  <TabPanel px={2}>
+                  <TabPanel>
                     <IdentityPanel />
                   </TabPanel>
                   <TabPanel>
@@ -110,7 +109,7 @@ export const E2ESdkDevtools: React.FC = ({ ...props }) => {
                 </TabPanels>
               ) : (
                 <TabPanels>
-                  <TabPanel>
+                  <TabPanel px={0}>
                     <LoginForm />
                   </TabPanel>
                 </TabPanels>

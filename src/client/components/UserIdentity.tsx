@@ -1,4 +1,5 @@
 import {
+  CloseButton,
   FormControl,
   FormControlProps,
   FormHelperText,
@@ -16,12 +17,14 @@ type UserIdentityProps = FormControlProps & {
   label?: string
   identity: PublicUserIdentity | null
   onIdentityChange: (identity: PublicUserIdentity | null) => void
+  showPublicKey?: boolean
 }
 
 export const UserIdentity: React.FC<UserIdentityProps> = ({
   label = 'User ID',
   identity,
   onIdentityChange,
+  showPublicKey = true,
   ...props
 }) => {
   const client = useClient()
@@ -30,6 +33,11 @@ export const UserIdentity: React.FC<UserIdentityProps> = ({
   const [publicKey, setPublicKey] = React.useState<string | null>(null)
 
   const fetchIdentity = React.useCallback(async () => {
+    if (!userId.trim()) {
+      onIdentityChange(null)
+      setPublicKey(null)
+      return
+    }
     setIsLoading(true)
     try {
       const identity = await client.getUserIdentity(userId)
@@ -52,10 +60,31 @@ export const UserIdentity: React.FC<UserIdentityProps> = ({
           value={userId}
           onChange={e => setUserId(e.target.value)}
           onBlur={fetchIdentity}
+          onKeyDown={e => {
+            if (e.key === 'Enter') {
+              fetchIdentity()
+            }
+          }}
         />
-        <InputRightElement>{isLoading && <Spinner />}</InputRightElement>
+        <InputRightElement>
+          {isLoading ? (
+            <Spinner />
+          ) : Boolean(identity) ? (
+            <CloseButton
+              size="sm"
+              rounded="full"
+              onClick={() => {
+                setUserId('')
+                onIdentityChange(null)
+                setPublicKey(null)
+              }}
+            />
+          ) : null}
+        </InputRightElement>
       </InputGroup>
-      {publicKey && <FormHelperText>Public key: {publicKey}</FormHelperText>}
+      {showPublicKey && publicKey && (
+        <FormHelperText>Public key: {publicKey}</FormHelperText>
+      )}
     </FormControl>
   )
 }

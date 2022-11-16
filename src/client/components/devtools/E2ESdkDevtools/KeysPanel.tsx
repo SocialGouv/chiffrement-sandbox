@@ -5,8 +5,6 @@ import {
   Divider,
   Flex,
   Grid,
-  Heading,
-  HeadingProps,
   Icon,
   Stack,
   Table,
@@ -25,6 +23,7 @@ import { KeychainItemMetadata } from 'modules/crypto/client'
 import NextLink from 'next/link'
 import React from 'react'
 import { FiInbox, FiPlusCircle, FiShuffle, FiUsers } from 'react-icons/fi'
+import { Section, SectionContainer, SectionHeader } from './components/Sections'
 
 export const KeysPanel: React.FC = () => {
   const allKeys = useClientKeys('nameFingerprint')
@@ -38,13 +37,13 @@ export const KeysPanel: React.FC = () => {
     ? allKeys[selectedKeyFingerprint]
     : null
   return (
-    <Flex position="absolute" inset={0}>
+    <SectionContainer>
       <KeySelectorPanel
         allKeys={allKeys}
         selectedKeyFingerprint={selectedKeyFingerprint}
         setSelectedKeyFingerprint={setSelectedKeyFingerprint}
       />
-      <Box flex={1} borderLeftWidth="1px" overflow="auto">
+      <Section>
         {selectedKeys ? (
           <KeyDetailsPanelProps keys={selectedKeys} />
         ) : (
@@ -52,8 +51,8 @@ export const KeysPanel: React.FC = () => {
             Select a key to show its properties
           </Center>
         )}
-      </Box>
-    </Flex>
+      </Section>
+    </SectionContainer>
   )
 }
 
@@ -71,7 +70,7 @@ const KeySelectorPanel: React.FC<KeySelectorPanelProps> = ({
   setSelectedKeyFingerprint,
 }) => {
   return (
-    <Stack flex={1} spacing={0} divider={<Divider my={0} />} overflow="auto">
+    <Section as={Stack} spacing={0} divider={<Divider my={0} />}>
       {Object.entries(allKeys).map(([nameFingerprint, keys]) => (
         <Flex
           px={4}
@@ -139,7 +138,7 @@ const KeySelectorPanel: React.FC<KeySelectorPanelProps> = ({
           </NextLink>
         </Center>
       )}
-    </Stack>
+    </Section>
   )
 }
 
@@ -237,28 +236,5 @@ const KeyDetailsPanelProps: React.FC<KeyDetailsPanelProps> = ({ keys }) => {
         </>
       )}
     </>
-  )
-}
-
-const SectionHeader: React.FC<HeadingProps & { children: React.ReactNode }> = ({
-  children,
-  ...props
-}) => {
-  return (
-    <Heading
-      as="h3"
-      fontSize="md"
-      px={4}
-      py={2}
-      my={4}
-      bg="gray.50"
-      _dark={{
-        bg: 'gray.800',
-        ...props._dark,
-      }}
-      {...props}
-    >
-      {children}
-    </Heading>
   )
 }
