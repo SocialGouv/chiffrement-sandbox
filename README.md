@@ -1,3 +1,6 @@
+Edit 2022-12: L'évolution de ce prototype est disponible ici: https://github.com/SocialGouv/e2esdk
+Ce repository est archivé.
+
 ## Chiffrement Sandbox
 
 Prototype de SDK de chiffrement de bout en bout (e2esdk), permettant l'échange
