@@ -1,4 +1,5 @@
-Edit 2022-12: L'évolution de ce prototype est disponible ici: https://github.com/SocialGouv/e2esdk
+Edit 2022-12: L'évolution de ce prototype est disponible ici: https://github.com/SocialGouv/e2esdk.
+
 Ce repository est archivé.
 
 ## Chiffrement Sandbox
